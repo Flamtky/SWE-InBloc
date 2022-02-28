@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="login_new_here">Neu hier?</string>
+    <string name="password">Passwort</string>
+    <string name="login_sign_in">Anmelden</string>
+    <string name="login_sign_up">Registreren</string>
+</resources>
