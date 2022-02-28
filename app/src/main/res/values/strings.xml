@@ -5,4 +5,5 @@
     <string name="login_sign_in">Sign in!</string>
     <string name="email" translatable="false">E-Mail</string>
     <string name="password">Password</string>
+    <string name="main_settings">Settings</string>
 </resources>
