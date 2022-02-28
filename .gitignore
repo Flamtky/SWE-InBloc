@@ -86,3 +86,5 @@ lint/tmp/
 
 # Android Studio
 .idea/
+
+app/google-services.json
