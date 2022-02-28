@@ -37,6 +37,18 @@ class LoginActivity : AppCompatActivity() {
      * @return void
      */
     fun login(email: String, password: String) {
-        // TODO: Login Function
+        // return if email or password is empty
+        if (email.trim().isEmpty()) {
+            emailField.requestFocus()
+            emailField.error = "Email is required"
+            return
+        }
+        if (password.trim().isEmpty()) {
+            passwordField.requestFocus()
+            passwordField.error = "Password is required"
+            return
+        }
+        
+
     }
 }
