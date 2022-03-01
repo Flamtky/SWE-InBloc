@@ -38,7 +38,7 @@ class LoginActivity : AppCompatActivity() {
             // TODO: go to main activity
             val email = auth.currentUser!!.email
             Toast.makeText(this, "Already logged in $email", Toast.LENGTH_SHORT).show()
-            auth.signOut()
+            auth.signOut() // TODO: remove this, just for testing
         }
 
         // Switch to Register Page
