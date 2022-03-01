@@ -339,6 +339,8 @@ class RegisterActivity : AppCompatActivity() {
                 criteria[2] = true
             }
         }
+        // if valid is should be [true, true, true]
+        // eg. [true, false, true] is invalid (no uppercase letter)
         if (criteria.contains(false)) {
             passwordField.error =
                 "Password must contain at least one number, one uppercase letter and one lowercase letter"
