@@ -2,11 +2,13 @@ package com.flamtkz_x.inbloc
 
 import android.app.DatePickerDialog
 import android.os.Bundle
+import android.util.Patterns
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.tasks.Task
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.ktx.database
@@ -99,9 +101,13 @@ class RegisterActivity : AppCompatActivity() {
     }
 
     /**
-     * Register the user
+     * Registers the user with [FirebaseAuth]
      *
-     * Shows a progress bar while logging in and disables all fields. Uses [FirebaseAnalytics] to log
+     * It gives feedback to the user if the registration was successful or not
+     * and logs with [FirebaseAnalytics].
+     * After registering, the user is added to the database with given parameters. At the end,
+     * the user gets a verification email and is redirected to the login page
+     * (from there to the main activity).
      * @param username the username of the user
      * @param email the email of the user
      * @param password the password of the user
@@ -110,6 +116,9 @@ class RegisterActivity : AppCompatActivity() {
      * @param country the country of the user
      * @param birthday the birthday of the user
      * @return void
+     * @see [addUserToDB]
+     * @see [onSuccessfulDBInsert]
+     * @see [onFailedDBInsert]
      */
     private fun register(
         username: String,
@@ -120,153 +129,24 @@ class RegisterActivity : AppCompatActivity() {
         country: String,
         birthday: String
     ) {
-        if (username.isEmpty()) {
-            nameField.error = "Username cannot be empty"
-            nameField.requestFocus()
-            return
-        }
-        if (email.isEmpty()) {
-            emailField.error = "Email cannot be empty"
-            emailField.requestFocus()
-            return
-        }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            emailField.error = "Invalid email address"
-            emailField.requestFocus()
-            return
-        }
-        if (password.isEmpty() || password.length < 6) {
-            passwordField.error = "Password must be at least 6 characters"
-            passwordField.requestFocus()
-            return
-        }
-        var valid = 0
-        for (i in password.indices) {
-            // Check if the password contains at least one number
-            if (password[i].isDigit()) {
-                valid++
-            }
-            // Check if the password contains at least one uppercase letter
-            if (password[i].isUpperCase()) {
-                valid++
-            }
-            // Check if the password contains at least one lowercase letter
-            if (password[i].isLowerCase()) {
-                valid++
-            }
-        }
-        if (valid < 3) {
-            passwordField.error =
-                "Password must contain at least one number, one uppercase letter and one lowercase letter"
-            passwordField.requestFocus()
-            return
-        }
-        if (zipCode.isEmpty()) {
-            zipCodeField.error = "Zipcode cannot be empty"
-            zipCodeField.requestFocus()
-            return
-        }
-        if (city.isEmpty()) {
-            cityField.error = "City cannot be empty"
-            cityField.requestFocus()
-            return
-        }
-        if (country.isEmpty()) {
-            countryField.error = "Country cannot be empty"
-            countryField.requestFocus()
-            return
-        }
-        if (birthday.isEmpty()) {
-            birthdayField.error = "Birthday cannot be empty"
-            return
-        }
-        registerBtn.isEnabled = false
-        nameField.isEnabled = false
-        emailField.isEnabled = false
-        passwordField.isEnabled = false
-        confirmPasswordField.isEnabled = false
-        zipCodeField.isEnabled = false
-        cityField.isEnabled = false
-        countryField.isEnabled = false
-        birthdayField.isEnabled = false
+        if (!areFieldsValid(username, email, password, zipCode, city, country, birthday)) return
+        toggleFields(false)
         progressBar.visibility = android.view.View.VISIBLE
 
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
-                registerBtn.isEnabled = true
-                nameField.isEnabled = true
-                emailField.isEnabled = true
-                passwordField.isEnabled = true
-                confirmPasswordField.isEnabled = true
-                zipCodeField.isEnabled = true
-                cityField.isEnabled = true
-                countryField.isEnabled = true
-                birthdayField.isEnabled = true
+                toggleFields(true)
                 progressBar.visibility = android.view.View.GONE
                 if (task.isSuccessful) {
                     // Sign in success, TODO: update UI with the signed-in user's information
                     Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show()
-                    analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
+                    analytics.logEvent(
+                        FirebaseAnalytics.Event.SIGN_UP,
                         Bundle().apply { // TODO: Test this
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
                             putString(FirebaseAnalytics.Param.SUCCESS, "true")
                         })
-                    val user = auth.currentUser
-                    val uid = user!!.uid
-                    usersRef.child(uid).setValue(
-                        mapOf( //TODO: Maybe change to class user
-                            "username" to username,
-                            "email" to email,
-                            "zipCode" to zipCode,
-                            "city" to city,
-                            "country" to country,
-                            "birthday" to birthday
-                        )
-                    ).addOnCompleteListener { dbTask ->
-                        if (dbTask.isSuccessful) {
-                            auth.currentUser!!.sendEmailVerification()
-                                .addOnCompleteListener { verfiyTask ->
-                                    if (verfiyTask.isSuccessful) {
-                                        Toast.makeText(
-                                            this,
-                                            "Verification email sent to $email",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        Toast.makeText(
-                                            this,
-                                            "Failed to send verification email",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                        analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
-                                            Bundle().apply {
-                                                putString(FirebaseAnalytics.Param.METHOD, "Email")
-                                                putString(FirebaseAnalytics.Param.SUCCESS, "false")
-                                                putString(
-                                                    FirebaseAnalytics.Param.VALUE,
-                                                    verfiyTask.exception?.message
-                                                )
-                                            })
-                                    }
-                                }
-                            finish()
-                        } else {
-                            // If sign up fails, display a message to the user.
-                            Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT)
-                                .show()
-                            analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
-                                Bundle().apply { // TODO: Test this
-                                    putString(FirebaseAnalytics.Param.METHOD, "Email")
-                                    putString(FirebaseAnalytics.Param.SUCCESS, "false")
-                                    putString(
-                                        FirebaseAnalytics.Param.VALUE,
-                                        dbTask.exception?.message
-                                    )
-                                })
-                            auth.signOut()
-                        }
-                    }
-                    finish()
+                    addUserToDB(username, email, zipCode, city, country, birthday)
                 } else {
                     // If sign up fails, display a message to the user.
                     Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT).show()
@@ -277,5 +157,213 @@ class RegisterActivity : AppCompatActivity() {
                         })
                 }
             }
+    }
+
+    /**
+     * Add the user to the database and sends a verification email on success
+     *
+     * It sends toasts on success and errors and logs events with [FirebaseAnalytics]
+     * @param username the username of the user
+     * @param email the email of the user
+     * @param zipCode the zip code of the user
+     * @param city the city of the user
+     * @param country the country of the user
+     * @param birthday the birthday of the user
+     * @return void
+     */
+    private fun addUserToDB(
+        username: String,
+        email: String,
+        zipCode: String,
+        city: String,
+        country: String,
+        birthday: String
+    ) {
+        val user = auth.currentUser
+        val uid = user!!.uid
+        usersRef.child(uid).setValue(
+            mapOf( //TODO: Maybe change to class user
+                "username" to username,
+                "email" to email,
+                "zipCode" to zipCode,
+                "city" to city,
+                "country" to country,
+                "birthday" to birthday
+            )
+        ).addOnCompleteListener { dbTask ->
+            if (dbTask.isSuccessful) {
+                onSuccessfulDBInsert(email)
+            } else {
+                onFailedDBInsert(dbTask)
+            }
+        }
+    }
+
+    /**
+     * On failed database insert
+     *
+     * Logs an event with [FirebaseAnalytics] and shows a toast
+     * @param dbTask the result of the database insert (Needed for the error message)
+     * @return void
+     */
+    private fun onFailedDBInsert(dbTask: Task<Void>) {
+        // If sign up fails, display a message to the user.
+        Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT)
+            .show()
+        analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
+            Bundle().apply { // TODO: Test this
+                putString(FirebaseAnalytics.Param.METHOD, "Email")
+                putString(FirebaseAnalytics.Param.SUCCESS, "false")
+                putString(
+                    FirebaseAnalytics.Param.VALUE,
+                    dbTask.exception?.message
+                )
+            })
+        auth.signOut()
+    }
+
+    /**
+     * Sends a verification email to the user
+     *
+     * Gives feedback on success and errors and logs events with [FirebaseAnalytics]
+     * @param email the email of the user
+     * @return void
+     */
+    private fun onSuccessfulDBInsert(email: String) {
+        auth.currentUser!!.sendEmailVerification()
+            .addOnCompleteListener { verifyTask ->
+                if (verifyTask.isSuccessful) {
+                    Toast.makeText(
+                        this,
+                        "Verification email sent to $email",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
+                        Bundle().apply { // TODO: Test this
+                            putString(FirebaseAnalytics.Param.METHOD, "Email")
+                            putString(FirebaseAnalytics.Param.SUCCESS, "true")
+                        })
+                    finish()
+                } else {
+                    Toast.makeText(
+                        this,
+                        "Failed to send verification email",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
+                        Bundle().apply {
+                            putString(FirebaseAnalytics.Param.METHOD, "Email")
+                            putString(FirebaseAnalytics.Param.SUCCESS, "false")
+                            putString(
+                                FirebaseAnalytics.Param.VALUE,
+                                verifyTask.exception?.message
+                            )
+                        })
+                }
+            }
+    }
+
+    /**
+     * Toggles if the fields are enabled or disabled
+     * @param enable Boolean to enable or disable the fields
+     * @return void
+     */
+    private fun toggleFields(enable: Boolean) {
+        registerBtn.isEnabled = enable
+        nameField.isEnabled = enable
+        emailField.isEnabled = enable
+        passwordField.isEnabled = enable
+        confirmPasswordField.isEnabled = enable
+        zipCodeField.isEnabled = enable
+        cityField.isEnabled = enable
+        countryField.isEnabled = enable
+        birthdayField.isEnabled = enable
+    }
+
+    /**
+     * Checks if the fields are valid.
+     *
+     * Gives feedback to the user if the fields are invalid.
+     * It also change the focus to the invalid field.
+     * @param username The username of the user.
+     * @param email The email of the user.
+     * @param password The password of the user.
+     * @param zipCode The zip code of the user.
+     * @param city The city of the user.
+     * @param country The country of the user.
+     * @param birthday The birthday of the user.
+     * @return Boolean True if fields are valid, false if not
+     */
+    private fun areFieldsValid(
+        username: String,
+        email: String,
+        password: String,
+        zipCode: String,
+        city: String,
+        country: String,
+        birthday: String
+    ): Boolean {
+        if (username.isEmpty()) {
+            nameField.error = "Username cannot be empty"
+            nameField.requestFocus()
+            return false
+        }
+        if (email.isEmpty()) {
+            emailField.error = "Email cannot be empty"
+            emailField.requestFocus()
+            return false
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            emailField.error = "Invalid email address"
+            emailField.requestFocus()
+            return false
+        }
+        if (password.isEmpty() || password.length < 6) {
+            passwordField.error = "Password must be at least 6 characters"
+            passwordField.requestFocus()
+            return false
+        }
+        // 3 booleans for each criteria (digits, lowercase, uppercase)
+        val criteria = BooleanArray(3)
+        for (i in password.indices) {
+            // Check if the password contains at least one number
+            if (password[i].isDigit()) {
+                criteria[0] = true
+            }
+            // Check if the password contains at least one uppercase letter
+            if (password[i].isUpperCase()) {
+                criteria[1] = true
+            }
+            // Check if the password contains at least one lowercase letter
+            if (password[i].isLowerCase()) {
+                criteria[2] = true
+            }
+        }
+        if (criteria.contains(false)) {
+            passwordField.error =
+                "Password must contain at least one number, one uppercase letter and one lowercase letter"
+            passwordField.requestFocus()
+            return false
+        }
+        if (zipCode.isEmpty()) {
+            zipCodeField.error = "Zipcode cannot be empty"
+            zipCodeField.requestFocus()
+            return false
+        }
+        if (city.isEmpty()) {
+            cityField.error = "City cannot be empty"
+            cityField.requestFocus()
+            return false
+        }
+        if (country.isEmpty()) {
+            countryField.error = "Country cannot be empty"
+            countryField.requestFocus()
+            return false
+        }
+        if (birthday.isEmpty()) {
+            birthdayField.error = "Birthday cannot be empty"
+            return false
+        }
+        return true
     }
 }
