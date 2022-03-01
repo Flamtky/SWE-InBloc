@@ -100,6 +100,8 @@ class RegisterActivity : AppCompatActivity() {
 
     /**
      * Register the user
+     *
+     * Shows a progress bar while logging in and disables all fields. Uses [FirebaseAnalytics] to log
      * @param username the username of the user
      * @param email the email of the user
      * @param password the password of the user
