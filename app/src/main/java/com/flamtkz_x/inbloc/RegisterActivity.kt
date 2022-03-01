@@ -100,7 +100,14 @@ class RegisterActivity : AppCompatActivity() {
 
     /**
      * Register the user
-     * TODO: Implement
+     * @param username the username of the user
+     * @param email the email of the user
+     * @param password the password of the user
+     * @param zipCode the zip code of the user
+     * @param city the city of the user
+     * @param country the country of the user
+     * @param birthday the birthday of the user
+     * @return void
      */
     private fun register(
         username: String,
@@ -197,9 +204,10 @@ class RegisterActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     // Sign in success, TODO: update UI with the signed-in user's information
                     Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show()
-                    analytics.logEvent("SUCCESSFUL_REGISTRATION",
+                    analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
                         Bundle().apply { // TODO: Test this
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
+                            putString(FirebaseAnalytics.Param.SUCCESS, "true")
                         })
                     val user = auth.currentUser
                     val uid = user!!.uid
@@ -212,29 +220,60 @@ class RegisterActivity : AppCompatActivity() {
                             "country" to country,
                             "birthday" to birthday
                         )
-                    ).addOnCompleteListener {
-                        if (it.isSuccessful) {
+                    ).addOnCompleteListener { dbTask ->
+                        if (dbTask.isSuccessful) {
+                            auth.currentUser!!.sendEmailVerification()
+                                .addOnCompleteListener { verfiyTask ->
+                                    if (verfiyTask.isSuccessful) {
+                                        Toast.makeText(
+                                            this,
+                                            "Verification email sent to $email",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            this,
+                                            "Failed to send verification email",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
+                                            Bundle().apply {
+                                                putString(FirebaseAnalytics.Param.METHOD, "Email")
+                                                putString(FirebaseAnalytics.Param.SUCCESS, "false")
+                                                putString(
+                                                    FirebaseAnalytics.Param.VALUE,
+                                                    verfiyTask.exception?.message
+                                                )
+                                            })
+                                    }
+                                }
                             finish()
                         } else {
                             // If sign up fails, display a message to the user.
                             Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT)
                                 .show()
-                            analytics.logEvent("FAILED_REGISTRATION",
+                            analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
                                 Bundle().apply { // TODO: Test this
                                     putString(FirebaseAnalytics.Param.METHOD, "Email")
+                                    putString(FirebaseAnalytics.Param.SUCCESS, "false")
+                                    putString(
+                                        FirebaseAnalytics.Param.VALUE,
+                                        dbTask.exception?.message
+                                    )
                                 })
+                            auth.signOut()
                         }
                     }
                     finish()
                 } else {
                     // If sign up fails, display a message to the user.
                     Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT).show()
-                    analytics.logEvent("FAILED_REGISTRATION",
+                    analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
                         Bundle().apply { // TODO: Test this
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
+                            putString(FirebaseAnalytics.Param.SUCCESS, "false")
                         })
                 }
             }
-
     }
 }
