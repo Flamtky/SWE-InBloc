@@ -35,7 +35,8 @@ class LoginActivity : AppCompatActivity() {
 
         // if already logged in, go to main activity
         if (auth.currentUser != null) {
-            // TODO: go to main activity
+            checkLoginStatus()
+            // TODO: remove this, just for testing
             val email = auth.currentUser!!.email
             Toast.makeText(this, "Already logged in $email", Toast.LENGTH_SHORT).show()
             auth.signOut() // TODO: remove this, just for testing
@@ -50,6 +51,22 @@ class LoginActivity : AppCompatActivity() {
         // Login Button
         loginBtn.setOnClickListener {
             login(emailField.text.toString().trim(), passwordField.text.toString().trim())
+        }
+    }
+
+    /**
+     * Checks if the current user is logged in and has an verified email.
+     * If not, it will show a dialog to the user to verify their email.
+     * If the user has an verified email, it will go to the main activity.
+     */
+    private fun checkLoginStatus() {
+        if (auth.currentUser != null) {
+            if (auth.currentUser!!.isEmailVerified) {
+                // TODO: go to main activity
+            } else {
+                Toast.makeText(this, "Please verify your email", Toast.LENGTH_LONG).show()
+                // TODO: show dialog to verify email with resend button
+            }
         }
     }
 
