@@ -119,16 +119,22 @@ class LoginActivity : AppCompatActivity() {
                         FirebaseAnalytics.Event.LOGIN,
                         Bundle().apply { // TODO: Test this
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
+                            putString(FirebaseAnalytics.Param.SUCCESS, "true")
                         })
+                    checkLoginStatus()
                 } else {
                     // If sign in fails, display a message to the user.
                     emailField.error = "Email or Password is incorrect"
-                    passwordField.error = "Email or Password is incorrect"
                     passwordField.text.clear()
+                    passwordField.error = "Email or Password is incorrect"
+                    passwordField.requestFocus()
                     Toast.makeText(this, "Login Failed", Toast.LENGTH_SHORT).show()
-                    analytics.logEvent("FAILED_LOGIN", Bundle().apply { // TODO: Test this
-                        putString(FirebaseAnalytics.Param.METHOD, "Email")
-                    })
+                    analytics.logEvent(
+                        FirebaseAnalytics.Event.LOGIN,
+                        Bundle().apply { // TODO: Test this
+                            putString(FirebaseAnalytics.Param.METHOD, "Email")
+                            putString(FirebaseAnalytics.Param.SUCCESS, "false")
+                        })
                 }
             }
     }
