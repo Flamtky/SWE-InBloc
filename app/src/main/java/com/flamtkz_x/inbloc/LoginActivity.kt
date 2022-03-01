@@ -37,7 +37,7 @@ class LoginActivity : AppCompatActivity() {
         // if already logged in, go to main activity
         if (auth.currentUser != null) {
             checkLoginStatus()
-            // TODO: remove this, just for testing
+            // TODO: remove this later, just for testing
             val email = auth.currentUser!!.email
             Toast.makeText(this, "Already logged in $email", Toast.LENGTH_SHORT).show()
             auth.signOut()

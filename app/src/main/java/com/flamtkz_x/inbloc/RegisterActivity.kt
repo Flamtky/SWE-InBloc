@@ -142,7 +142,7 @@ class RegisterActivity : AppCompatActivity() {
                     Toast.makeText(this, "Registration successful", Toast.LENGTH_SHORT).show()
                     analytics.logEvent(
                         FirebaseAnalytics.Event.SIGN_UP,
-                        Bundle().apply { // TODO: Test this
+                        Bundle().apply {
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
                             putString(FirebaseAnalytics.Param.SUCCESS, "true")
                         })
@@ -151,7 +151,7 @@ class RegisterActivity : AppCompatActivity() {
                     // If sign up fails, display a message to the user.
                     Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT).show()
                     analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
-                        Bundle().apply { // TODO: Test this
+                        Bundle().apply {
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
                             putString(FirebaseAnalytics.Param.SUCCESS, "false")
                         })
@@ -211,7 +211,7 @@ class RegisterActivity : AppCompatActivity() {
         Toast.makeText(baseContext, "Registration failed!", Toast.LENGTH_SHORT)
             .show()
         analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
-            Bundle().apply { // TODO: Test this
+            Bundle().apply {
                 putString(FirebaseAnalytics.Param.METHOD, "Email")
                 putString(FirebaseAnalytics.Param.SUCCESS, "false")
                 putString(
@@ -239,7 +239,7 @@ class RegisterActivity : AppCompatActivity() {
                         Toast.LENGTH_SHORT
                     ).show()
                     analytics.logEvent(FirebaseAnalytics.Event.SIGN_UP,
-                        Bundle().apply { // TODO: Test this
+                        Bundle().apply {
                             putString(FirebaseAnalytics.Param.METHOD, "Email")
                             putString(FirebaseAnalytics.Param.SUCCESS, "true")
                         })
