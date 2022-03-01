@@ -173,7 +173,7 @@ class LoginActivity : AppCompatActivity() {
 
     /**
      * Toggles if the fields are enabled or disabled
-     * @param enabled Boolean to enable or disable the fields
+     * @param enable Boolean to enable or disable the fields
      * @return void
      */
     private fun toggleFields(enable: Boolean) {
