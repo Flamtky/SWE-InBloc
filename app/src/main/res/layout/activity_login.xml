@@ -52,7 +52,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
-            android:text="Button"
+            android:text="Sign In"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/passwordMain" />
@@ -60,10 +60,13 @@
         <TextView
             android:text="New here?"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/signUpTextMain"
-            app:layout_constraintTop_toBottomOf="@+id/loginbuttonMain" android:layout_marginTop="40dp"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.397"/>
+            android:layout_height="wrap_content"
+            android:id="@+id/signUpTextMain"
+            app:layout_constraintTop_toBottomOf="@+id/loginbuttonMain"
+            android:layout_marginTop="40dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.397" />
 
         <Button
             android:id="@+id/signUpButtonMain"
@@ -72,10 +75,25 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:text="Sign Up!"
             android:textAllCaps="false"
-            android:textColor="#000000" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="0.653"
-            app:layout_constraintTop_toBottomOf="@+id/loginbuttonMain" android:layout_marginTop="24dp"
-            android:onClick="register" android:shadowColor="#00EF1212"/>
+            android:textColor="#000000"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.653"
+            app:layout_constraintTop_toBottomOf="@+id/loginbuttonMain"
+            android:layout_marginTop="24dp"
+            android:onClick="register"
+            android:shadowColor="#00EF1212" />
+
+        <ProgressBar
+            android:id="@+id/progressBar1"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:layout_marginStart="164dp"
+            android:layout_marginTop="216dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
