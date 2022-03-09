@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import UserRoutes from './routes/user';/*
+import UserRoutes from './routes/userRoutes';/*
 import GymRoutes from './routes/gym';
 import WallRoutes from './routes/wall';
 import RouteRoutes from './routes/route';*/
