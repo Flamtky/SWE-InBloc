@@ -71,9 +71,10 @@ app.use((err:unknown, _req:Request, res:Response, _next:NextFunction) => {
         console.error(err.stack);
         return res.status(500).json({ error: err.message });
     }
+    console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server started on port ${PORT}`);
+  console.log(`Server started on port http://localhost:${PORT}`);
 });
