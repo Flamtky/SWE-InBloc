@@ -43,7 +43,7 @@ app.use((req, res, next) => {
     next();
 });
 
-/* app.use((req, res, next) => {
+app.use((req, res, next) => {
     // Checks Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -56,24 +56,20 @@ app.use((req, res, next) => {
     } else {
         // Checks if the token is valid
         const authToken = token[1];
-        if (authToken !== 'valid') { // TODO: Change to real token
-            return res.status(401).json({ error: 'Invalid token' });
-        }
+        admin.auth().verifyIdToken(authToken)
+            .then((decodedToken) => {
+                // If the token is valid, the request is authorized
+                req.headers.uid = decodedToken.uid;
+                // Checks if its an admin
+                admin.auth().getUser(decodedToken.uid).then((userRecord) => {
+                    req.headers.admin = userRecord.customClaims.admin || false;
+                });
+                next();
+            }
+            ).catch(() => {
+                return res.status(401).json({ error: 'Invalid token' });
+            });
     }
-    // If the token is valid, the request is authorized
-    next();
-});
-
-app.use((req, res, next) => {
-    // if content-type is not application/json, reject
-    if (req.headers['content-type'] !== 'application/json') {
-        return res.status(415).json({ error: 'Content-Type must be application/json' });
-    }
-    // if method is not GET, POST, DELETE, reject
-    if (['GET', 'POST', 'DELETE'].indexOf(req.method) === -1) {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-    next();
 });
 
 app.use('/', PathRouter.init(app,router));
