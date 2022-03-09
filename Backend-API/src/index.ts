@@ -4,18 +4,25 @@ import cors from 'cors';
 import PathRouter from './PathRouter';
 import morgan from 'morgan';
 import APIException from './APIException';
+import * as admin from 'firebase-admin';
 
 const app = express();
 const router = express.Router();
 const PORT = 1337;
+
+// Initialize Firebase
+admin.initializeApp({
+    credential: admin.credential.cert(require('../adminsdk-config.json')),
+    databaseURL: 'https://inbloc69-default-rtdb.europe-west1.firebasedatabase.app/'
+});
 
 /*
    Middlewares
    - Morgan for logging
    - Cors for cross-origin resource sharing
    - Express.json for parsing JSON
-   - Authhandler for authentication
    - Validator checks content-type and method
+   - Authhandler for authentication
    - Router for handling routes
    - NotFoundHandler for handling 404
    - Errorhandler for error handling
@@ -23,7 +30,20 @@ const PORT = 1337;
 app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
+
 app.use((req, res, next) => {
+    // if content-type is not application/json, reject
+    if (req.headers['content-type'] !== 'application/json') {
+        return res.status(415).json({ error: 'Content-Type must be application/json' });
+    }
+    // if method is not GET, POST, DELETE, PATCH reject
+    if (['GET', 'POST', 'DELETE', 'PATCH'].indexOf(req.method) === -1) {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+    next();
+});
+
+/* app.use((req, res, next) => {
     // Checks Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader) {
