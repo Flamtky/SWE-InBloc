@@ -15,8 +15,7 @@ export default class UserRoutes {
             admin.database().ref('/users').limitToFirst(limit).startAt(offset).once('value', (snapshot: any) => {
                 res.status(200).json({data: { users: snapshot.val() }});
             }, (error: any) => {
-                console.error(error);
-                next(new APIException(500, 'Error getting users'));
+                handleFirebaseError(error, res, next, 'Error getting users');
             });
         }).all('/', (_req: Request, _res: Response, next: NextFunction) => {
             next(new APIException(405, 'Method not allowed'));
@@ -32,8 +31,7 @@ export default class UserRoutes {
                     res.status(200).json({ data: { user: snapshot.val() } });
                 }
             }).catch((err) => {
-                console.error(err);
-                next(new APIException(500, 'Error getting user'));
+                handleFirebaseError(err, res, next, 'Error getting user');
             });
         });
 
@@ -51,8 +49,7 @@ export default class UserRoutes {
             admin.database().ref('/users/' + id).update(user).then(() => {
                 res.status(200).json({ data: { user } });
             }).catch((err) => {
-                console.error(err);
-                next(new APIException(500, 'Error updating user'));
+                handleFirebaseError(err, res, next, 'Error updating user');
             });
         });
 
@@ -70,8 +67,7 @@ export default class UserRoutes {
             admin.database().ref('/users/' + id).set(user).then(() => {
                 res.status(200).json({ data: { user } });
             }).catch((err) => {
-                console.error(err);
-                next(new APIException(500, 'Error creating user'));
+                handleFirebaseError(err, res, next, 'Error creating user');
             });
         });
 
@@ -86,14 +82,51 @@ export default class UserRoutes {
                 admin.auth().deleteUser(id).then(() => {
                     res.status(200).json({ data: { user: null } });
                 }).catch((err) => {
-                    console.error(err);
-                    next(new APIException(500, 'Error deleting user'));
+                    handleFirebaseError(err, res, next, 'Error deleting user auth');
                 });
             }).catch((err) => {
-                console.error(err);
-                next(new APIException(500, 'Error deleting user'));
+                handleFirebaseError(err, res, next, 'Error deleting user');
             });
         }).all('/:uid', (_req: Request, _res: Response, next: NextFunction) => {
+            next(new APIException(405, 'Method not allowed'));
+        });
+
+        // Admin routes
+
+        // Get user is admin or list all users
+        router.get('/:uid/admin', (req: Request, res: Response, next: NextFunction) => {
+            const id = req.params.uid;
+            if (!req.headers.admin) {
+                return next(new APIException(403, 'You are not allowed to view the admin status of this user'));
+            }
+            
+            admin.auth().getUser(id).then((userRecord) => {
+                res.status(200).json({ data: { admin: userRecord.customClaims.admin || false } });
+            }).catch((err) => {
+                handleFirebaseError(err, res, next, 'Error getting user admin status');
+            });
+        });
+
+        // Change user admin status
+        router.patch('/:uid/admin', (req: Request, res: Response, next: NextFunction) => {
+            const id = req.params.uid;
+            const newAdminStatus = req.body.admin;
+            if (!req.headers.admin) {
+                return next(new APIException(403, 'You are not allowed to make this user admin'));
+            }
+            if (newAdminStatus === undefined) {
+                return next(new APIException(400, 'No admin status provided'));
+            }
+            if (typeof newAdminStatus !== 'boolean') {
+                return next(new APIException(400, 'Invalid admin status'));
+            }
+            admin.auth().setCustomUserClaims(id, { admin: newAdminStatus }).then(() => {
+                res.status(200).json({ data: { admin: newAdminStatus } });
+            }).catch((err) => {
+                console.error(err);
+                handleFirebaseError(err, res, next, 'Error setting user admin status');
+            });
+        }).all('/:uid/admin', (_req: Request, _res: Response, next: NextFunction) => {
             next(new APIException(405, 'Method not allowed'));
         });
 
@@ -151,3 +184,23 @@ const steriliseUser = (user: User, fillup: boolean = false): User => {
     }
     return newUser;
 };
+
+const handleFirebaseError = (err: any, res: Response, next: NextFunction, defaultErrorMessage: string = 'Internal server error') => {
+    switch (err.code) {
+        case 'auth/invalid-argument':
+            next(new APIException(400, 'Invalid argument'));
+            break;
+        case 'auth/user-not-found':
+            next(new APIException(404, 'User not found'));
+            break;
+        case 'auth/invalid-uid':
+            next(new APIException(400, 'Invalid user id'));
+            break;
+        case 'auth/argument-error':
+            next(new APIException(400, 'Invalid argument'));
+            break;
+        default:
+            console.error(err);
+            next(new APIException(500, defaultErrorMessage));
+    }
+}
