@@ -83,11 +83,8 @@ app.use((err:unknown, _req:Request, res:Response, _next:NextFunction) => {
     if (err instanceof APIException) {
         return res.status(err.code).json({ error: err.message });
     }
-    if (err instanceof Error && err.message) {
-        console.error(err.stack);
-        return res.status(500).json({ error: err.message });
-    }
-    console.error(err);
+
+    console.error((err as Error).stack || err);
     return res.status(500).json({ error: 'Internal server error' });
 });
 
