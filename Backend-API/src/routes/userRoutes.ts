@@ -1,6 +1,6 @@
-import APIException from "../APIException";
-import { Request, Response, NextFunction, Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
 import * as admin from 'firebase-admin';
+import APIException from "../APIException";
 import User from "../interfaces/User";
 
 // All user routes
@@ -13,7 +13,7 @@ export default class UserRoutes {
             const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
             const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
             admin.database().ref('/users').limitToFirst(limit).startAt(offset).once('value', (snapshot: any) => {
-                res.status(200).json({data: { users: snapshot.val() }});
+                res.status(200).json({ data: { users: snapshot.val() } });
             }, (error: any) => {
                 handleFirebaseError(error, res, next, 'Error getting users');
             });
@@ -38,7 +38,7 @@ export default class UserRoutes {
         // Update user by uid
         router.patch('/:uid', (req: Request, res: Response, next: NextFunction) => {
             const id = req.params.uid;
-            const user:User = steriliseUser(req.body as User, false);
+            const user: User = steriliseUser(req.body as User, false);
             const currentUser = req.headers.uid;
             if (id !== currentUser || !req.headers.admin) {
                 return next(new APIException(403, 'You are not allowed to update this user'));
@@ -56,7 +56,7 @@ export default class UserRoutes {
         // Create user with uid
         router.post('/:uid', (req: Request, res: Response, next: NextFunction) => {
             const id = req.params.uid;
-            const user:User = steriliseUser(req.body as User, true);
+            const user: User = steriliseUser(req.body as User, true);
             const currentUser = req.headers.uid;
             if (id !== currentUser || !req.headers.admin) {
                 return next(new APIException(403, 'You are not allowed to create this user'));
@@ -99,7 +99,7 @@ export default class UserRoutes {
             if (!req.headers.admin) {
                 return next(new APIException(403, 'You are not allowed to view the admin status of this user'));
             }
-            
+
             admin.auth().getUser(id).then((userRecord) => {
                 res.status(200).json({ data: { admin: userRecord.customClaims.admin || false } });
             }).catch((err) => {
@@ -134,13 +134,14 @@ export default class UserRoutes {
     }
 }
 
-const isEmail = (email:string) => {
+const isEmail = (email: string) => {
     return email.length >= 3 && email
-      .toLowerCase()
-      .match(
-        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-      );
+        .toLowerCase()
+        .match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        )
 };
+
 
 const validateUser = (user: User): boolean => {
     if (user.username.length < 3 || user.username.length > 16) {
