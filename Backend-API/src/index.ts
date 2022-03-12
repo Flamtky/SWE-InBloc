@@ -58,12 +58,15 @@ app.use((req, res, next) => {
         const authToken = token[1];
         admin.auth().verifyIdToken(authToken)
             .then((decodedToken) => {
-                // If the token is valid, the request is authorized
-                req.headers.uid = decodedToken.uid;
-                // Checks if its an admin
+                // Checks if its an admin and checks if the users email is verified
                 admin.auth().getUser(decodedToken.uid).then((userRecord) => {
                     req.headers.admin = userRecord.customClaims.admin || false;
+                    if (!userRecord.emailVerified)
+                        return res.status(403).json({ error: 'Email not verified' });
                 });
+
+                // If the token is valid and email is verified, the request is authorized
+                req.headers.uid = decodedToken.uid;
                 next();
             }
             ).catch(() => {
@@ -72,13 +75,13 @@ app.use((req, res, next) => {
     }
 });
 
-app.use('/', PathRouter.init(app,router));
+app.use('/', PathRouter.init(app, router));
 
 app.use((_req, _res, next) => {
     next(new APIException(404, 'Not found'));
 });
 
-app.use((err:unknown, _req:Request, res:Response, _next:NextFunction) => {
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     // APIException (custom error)
     if (err instanceof APIException) {
         return res.status(err.code).json({ error: err.message });
@@ -89,5 +92,5 @@ app.use((err:unknown, _req:Request, res:Response, _next:NextFunction) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server started on port http://localhost:${PORT}`);
+    console.log(`Server started on port http://localhost:${PORT}`);
 });
