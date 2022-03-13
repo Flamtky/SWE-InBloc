@@ -5,6 +5,7 @@ import PathRouter from './PathRouter';
 import morgan from 'morgan';
 import APIException from './APIException';
 import * as admin from 'firebase-admin';
+import { nextTick } from 'process';
 
 const app = express();
 const router = express.Router();
@@ -70,8 +71,8 @@ app.use((req, res, next) => {
                     next();
                 });
             }
-            ).catch(() => {
-                return res.status(401).json({ error: 'Invalid token' });
+            ).catch((e) => {
+                return res.status(401).json({ error: e.code === 'auth/id-token-expired' ? 'Token expired' : 'Invalid token' });
             });
     }
 });
@@ -87,8 +88,10 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof APIException) {
         return res.status(err.code).json({ error: err.message });
     }
-
-    console.error((err as Error).stack || err);
+    // Catch all json pharser errors
+    if (err instanceof SyntaxError && 'body' in err) {
+        return res.status(400).json({ error: 'Invalid Payload' });
+    }
     return res.status(500).json({ error: 'Internal server error' });
 });
 
