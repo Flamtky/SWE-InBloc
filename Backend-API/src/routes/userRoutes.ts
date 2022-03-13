@@ -150,16 +150,7 @@ const validateUser = (user: User): boolean => {
     if (!isEmail(user.email)) {
         return false;
     }
-    if (user.country != undefined && (user.country.length < 4 || user.country.length > 56)) {
-        return false;
-    }
-    if (user.city != undefined && user.city.length < 1) {
-        return false;
-    }
     if (user.zip != undefined && user.zip.length < 1) {
-        return false;
-    }
-    if (user.birthdate != undefined && isNaN(Date.parse(user.birthdate))) {
         return false;
     }
 
@@ -170,10 +161,7 @@ const steriliseUser = (user: User, fillup: boolean = false): User => {
     const newUser: User = {
         username: user.username ? user.username.trim() : null,
         email: user.email ? user.email.trim() : null,
-        country: user.country ? user.country.trim() : null,
-        city: user.city ? user.city.trim() : null,
         zip: user.zip ? user.zip.trim() : null,
-        birthdate: user.birthdate ? user.birthdate.trim() : null,
     };
     if (!fillup) {
         // remove empty fields
