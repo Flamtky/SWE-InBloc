@@ -44,7 +44,7 @@ export default class UserRoutes {
                     return next(new APIException(403, 'You are not allowed to update this user'));
                 }
             }
-            if (user === undefined || !validateUser(user)) {
+            if (user === undefined || !validateUser(user, true)) {
                 return next(new APIException(400, user === undefined ? 'No user data provided' : 'Invalid user'));
             }
             admin.database().ref('/users/' + id).update(user).then(() => {
@@ -139,8 +139,11 @@ export default class UserRoutes {
     }
 }
 
-const isEmail = (email: string) => {
-    return email != null && email.length >= 3 && email
+const isEmail = (email: string, undefinedIsValid: boolean = false) => {
+    if (email === undefined) {
+        return undefinedIsValid;
+    }
+    return email?.length >= 3 && email
         .toLowerCase()
         .match(
             /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -148,14 +151,21 @@ const isEmail = (email: string) => {
 };
 
 
-const validateUser = (user: User): boolean => {
-    if (user.username?.length < 3 || user.username?.length > 16) {
+const validateUser = (user: User, undefinedEmailIsValid:boolean = false): boolean => {
+    console.log(user)
+    if (user == undefined || Object.keys(user).length === 0) {
         return false;
     }
-    if (!isEmail(user.email)) {
+    if (user.username?.length < 3 || user.username?.length > 16) {
+        console.error('Username must be between 3 and 16 characters', user.username?.length);
+        return false;
+    }
+    if (!isEmail(user.email, undefinedEmailIsValid)) {
+        console.error('Invalid email');
         return false;
     }
     if (user.zip != undefined && user.zip?.length < 1) {
+        console.error('Invalid zip');
         return false;
     }
 
