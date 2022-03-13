@@ -60,7 +60,7 @@ app.use((req, res, next) => {
             .then((decodedToken) => {
                 // Checks if its an admin and checks if the users email is verified
                 admin.auth().getUser(decodedToken.uid).then((userRecord) => {
-                    req.headers.admin = userRecord.customClaims.admin || false;
+                    req.headers.admin = userRecord.customClaims?.admin || false;
                     if (!userRecord.emailVerified)
                         return res.status(403).json({ error: 'Email not verified' });
                 });
