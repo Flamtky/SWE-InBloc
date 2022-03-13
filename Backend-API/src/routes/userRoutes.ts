@@ -135,6 +135,31 @@ export default class UserRoutes {
             next(new APIException(405, 'Method not allowed'));
         });
 
+        // stream realtime updates with text/event-stream
+        router.get('/:uid/stream', (req: Request, res: Response, next: NextFunction) => {
+            const id = req.params.uid;
+            res.writeHead(200, {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            });
+            res.write('\n');
+
+            const stream = admin.database().ref('/users/' + id).on('value', (snapshot) => {
+                res.write('data: ' + JSON.stringify(snapshot.val()) + '\n\n');
+            }, (err) => {
+                handleFirebaseError(err, res, next, 'Error streaming user');
+            }
+            );
+            res.on('close', () => {
+                admin.database().ref('/users/' + id).off('value', stream);
+            }
+            );
+
+        }).all('/:uid/stream', (_req: Request, _res: Response, next: NextFunction) => {
+            next(new APIException(405, 'Method not allowed'));
+        });
+
         return router;
     }
 }
