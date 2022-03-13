@@ -11,8 +11,7 @@ export default class UserRoutes {
         // Get all users
         router.get('/', (req: Request, res: Response, next: NextFunction) => {
             const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-            const offset = req.query.offset ? parseInt(req.query.offset as string, 10) : 0;
-            admin.database().ref('/users').limitToFirst(limit).startAt(offset).once('value', (snapshot: any) => {
+            admin.database().ref('/users').limitToFirst(limit).once('value', (snapshot: any) => {
                 res.status(200).json({ data: { users: snapshot.val() } });
             }, (error: any) => {
                 handleFirebaseError(error, res, next, 'Error getting users');
@@ -58,8 +57,10 @@ export default class UserRoutes {
             const id = req.params.uid;
             const user: User = steriliseUser(req.body as User, true);
             const currentUser = req.headers.uid;
-            if (id !== currentUser || !req.headers.admin) {
-                return next(new APIException(403, 'You are not allowed to create this user'));
+            if (!req.headers.admin) {
+                if (id !== currentUser) {
+                    return next(new APIException(403, 'You are not allowed to create this user'));
+                }
             }
             if (user === undefined || !validateUser(user)) {
                 return next(new APIException(400, user === undefined ? 'No user data provided' : 'Invalid user'));
@@ -135,7 +136,7 @@ export default class UserRoutes {
 }
 
 const isEmail = (email: string) => {
-    return email.length >= 3 && email
+    return email != null && email.length >= 3 && email
         .toLowerCase()
         .match(
             /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
@@ -144,13 +145,13 @@ const isEmail = (email: string) => {
 
 
 const validateUser = (user: User): boolean => {
-    if (user.username.length < 3 || user.username.length > 16) {
+    if (user.username?.length < 3 || user.username?.length > 16) {
         return false;
     }
     if (!isEmail(user.email)) {
         return false;
     }
-    if (user.zip != undefined && user.zip.length < 1) {
+    if (user.zip != undefined && user.zip?.length < 1) {
         return false;
     }
 
@@ -174,7 +175,7 @@ const steriliseUser = (user: User, fillup: boolean = false): User => {
     return newUser;
 };
 
-const handleFirebaseError = (err: any, res: Response, next: NextFunction, defaultErrorMessage: string = 'Internal server error') => {
+const handleFirebaseError = (err: any, _res: Response, next: NextFunction, defaultErrorMessage: string = 'Internal server error') => {
     switch (err.code) {
         case 'auth/invalid-argument':
             next(new APIException(400, 'Invalid argument'));
