@@ -39,8 +39,10 @@ export default class UserRoutes {
             const id = req.params.uid;
             const user: User = steriliseUser(req.body as User, false);
             const currentUser = req.headers.uid;
-            if (id !== currentUser || !req.headers.admin) {
-                return next(new APIException(403, 'You are not allowed to update this user'));
+            if (!req.headers.admin) {
+                if (id !== currentUser) {
+                    return next(new APIException(403, 'You are not allowed to update this user'));
+                }
             }
             if (user === undefined || !validateUser(user)) {
                 return next(new APIException(400, user === undefined ? 'No user data provided' : 'Invalid user'));
@@ -76,8 +78,10 @@ export default class UserRoutes {
         router.delete('/:uid', (req: Request, res: Response, next: NextFunction) => {
             const id = req.params.uid;
             const currentUser = req.headers.uid;
-            if (id !== currentUser || !req.headers.admin) {
-                return next(new APIException(403, 'You are not allowed to delete this user'));
+            if (!req.headers.admin) {
+                if (id !== currentUser) {
+                    return next(new APIException(403, 'You are not allowed to delete this user'));
+                }
             }
             admin.database().ref('/users/' + id).remove().then(() => {
                 admin.auth().deleteUser(id).then(() => {
@@ -94,7 +98,7 @@ export default class UserRoutes {
 
         // Admin routes
 
-        // Get user is admin or list all users
+        // Get user is admin
         router.get('/:uid/admin', (req: Request, res: Response, next: NextFunction) => {
             const id = req.params.uid;
             if (!req.headers.admin) {
