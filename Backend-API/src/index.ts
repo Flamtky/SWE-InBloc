@@ -59,15 +59,20 @@ app.use((req, res, next) => {
         admin.auth().verifyIdToken(authToken)
             .then((decodedToken) => {
                 // Checks if its an admin and checks if the users email is verified
+                let verified = false;
                 admin.auth().getUser(decodedToken.uid).then((userRecord) => {
                     req.headers.admin = userRecord.customClaims?.admin || false;
-                    if (!userRecord.emailVerified)
+                    if (!userRecord.emailVerified) {
                         return res.status(403).json({ error: 'Email not verified' });
+                    }
+                    verified = true;
                 });
 
-                // If the token is valid and email is verified, the request is authorized
-                req.headers.uid = decodedToken.uid;
-                next();
+                if (verified) {
+                    // If the token is valid and email is verified, the request is authorized
+                    req.headers.uid = decodedToken.uid;
+                    next();
+                }
             }
             ).catch(() => {
                 return res.status(401).json({ error: 'Invalid token' });
