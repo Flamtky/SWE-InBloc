@@ -5,7 +5,6 @@ import PathRouter from './PathRouter';
 import morgan from 'morgan';
 import APIException from './APIException';
 import * as admin from 'firebase-admin';
-import { nextTick } from 'process';
 
 const app = express();
 const router = express.Router();

@@ -144,7 +144,7 @@ export default class UserRoutes {
                 'Connection': 'keep-alive',
             });
             res.write('\n');
-
+            // add auth
             const stream = admin.database().ref('/users/' + id).on('value', (snapshot) => {
                 res.write('data: ' + JSON.stringify(snapshot.val()) + '\n\n');
             }, (err) => {
@@ -153,6 +153,7 @@ export default class UserRoutes {
             );
             res.on('close', () => {
                 admin.database().ref('/users/' + id).off('value', stream);
+                res.end();
             }
             );
 
