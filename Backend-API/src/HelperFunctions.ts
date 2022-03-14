@@ -197,3 +197,24 @@ export const steriliseDayFromInterface = (day: Day, fillup: boolean = false): Da
     }
     return newDay;
 }
+
+// Checks if value is a valid date (YYYY-MM-DD)
+export const validateDate = (date: string) => {
+    if (date == undefined || date.length !== 10) {
+        return false;
+    }
+    const dateArray = date.split('-');
+    if (dateArray.length !== 3) {
+        return false;
+    }
+    if (dateArray[0].length !== 4 || dateArray[1].length !== 2 || dateArray[2].length !== 2) {
+        return false;
+    }
+    if (isNaN(parseInt(dateArray[0])) || isNaN(parseInt(dateArray[1])) || isNaN(parseInt(dateArray[2]))) {
+        return false;
+    }
+    if (parseInt(dateArray[1]) < 1 || parseInt(dateArray[1]) > 12 || parseInt(dateArray[2]) < 1 || parseInt(dateArray[2]) > 31) {
+        return false;
+    }
+    return true;
+}

@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import APIException from "../APIException";
 import Gym, { Day, Openings } from "../interfaces/Gym";
 import express from "express";
-import { handleFirebaseError, steriliseDayFromInterface, steriliseGym, steriliseOpenings, validateDay, validateDayFromInterface, validateGym, validateOpenings } from "../HelperFunctions";
+import { handleFirebaseError, steriliseDayFromInterface, steriliseGym, steriliseOpenings, validateDate, validateDay, validateDayFromInterface, validateGym, validateOpenings } from "../HelperFunctions";
 
 const router = express.Router();
 
@@ -46,18 +46,27 @@ router.get('/:gymId', (req: Request, res: Response, next: NextFunction) => {
 router.patch('/:gymId', (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.gymId;
     const gym: Gym = steriliseGym(req.body as Gym, false);
-    const currentUser = req.headers.uid;
+    const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        // TODO: add owner check
+        isOwner(id, currentUser).then((isOwner) => {
+            if (isOwner) {
+                if (!validateGym(gym, true)) {
+                    return next(new APIException(400, 'Invalid gym'));
+                }
+                admin.database().ref('/gyms/' + id).update(gym).then(() => {
+                    res.status(200).json({ data: { gym } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error updating gym');
+                });
+            } else {
+                next(new APIException(403, 'Not authorised to update this gym'));
+            }
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error checking if user is owner');
+        });
+    } else {
+        next(new APIException(403, 'Not authorised to update this gym'));
     }
-    if (!validateGym(gym, true)) {
-        return next(new APIException(400, 'Invalid gym'));
-    }
-    admin.database().ref('/gyms/' + id).update(gym).then(() => {
-        res.status(200).json({ data: { gym } });
-    }).catch((err) => {
-        handleFirebaseError(err, res, next, 'Error updating gym');
-    });
 });
 
 // Create gym by gymId
@@ -66,7 +75,7 @@ router.post('/:gymid', (req: Request, res: Response, next: NextFunction) => {
     const gym: Gym = steriliseGym(req.body as Gym, true);
     const currentUser = req.headers.uid;
     if (!req.headers.admin) {
-        // TODO: add owner check
+        return next(new APIException(403, 'Not authorised to create this gym'));
     }
     if (!validateGym(gym)) {
         return next(new APIException(400, 'Invalid gym'));
@@ -91,7 +100,7 @@ router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
     const currentUser = req.headers.uid;
     if (!req.headers.admin) {
-        // TODO: add owner check
+        return next(new APIException(403, 'Not authorised to delete this gym'));
     }
     admin.database().ref('/gyms/' + gymId).remove().then(() => {
         res.status(200).json({ data: { gym: null } });
@@ -122,18 +131,25 @@ router.get('/:gymId/openings', (req: Request, res: Response, next: NextFunction)
 router.post('/:gymId/openings', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
     const opening: Openings = steriliseOpenings(req.body as Openings, false);
-    const currentUser = req.headers.uid;
+    const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        // TODO: add owner check
+        isOwner(gymId, currentUser).then((isOwner) => {
+            if (isOwner) {
+                if (!validateOpenings(opening)) {
+                    return next(new APIException(400, 'Invalid opening'));
+                }
+                admin.database().ref('/openings/' + gymId).set(opening).then(() => {
+                    res.status(200).json({ data: { opening } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error updating opening');
+                });
+            } else {
+                next(new APIException(403, 'Not authorised to set opening for this gym'));
+            }
+        });
+    } else {
+        next(new APIException(403, 'Not authorised to set opening for this gym'));
     }
-    if (!validateOpenings(opening)) {
-        return next(new APIException(400, 'Invalid opening'));
-    }
-    admin.database().ref('/openings/' + gymId).set(opening).then(() => {
-        res.status(200).json({ data: { opening } });
-    }).catch((err) => {
-        handleFirebaseError(err, res, next, 'Error updating opening');
-    });
 }).all('/:gymId/openings', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
@@ -161,23 +177,146 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
     const gymId = req.params.gymId;
     const day = req.params.day;
     const openingDay: Day = steriliseDayFromInterface(req.body as Day, false);
-    const currentUser = req.headers.uid;
+    const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        // TODO: add owner check
+        isOwner(gymId, currentUser).then((isOwner) => {
+            if (isOwner) {
+                if (!validateDay(day.trim().toLowerCase())) {
+                    return next(new APIException(400, 'Invalid day'));
+                }
+                if (!validateDayFromInterface(openingDay)) {
+                    return next(new APIException(400, 'Invalid opening'));
+                }
+                admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
+                    res.status(200).json({ data: { [day]: openingDay } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error updating opening');
+                });
+            } else {
+                next(new APIException(403, 'Not authorised to update opening for this gym'));
+            }
+        });
+    } else {
+        next(new APIException(403, 'Not authorised to update opening for this gym'));
     }
-    if (!validateDay(day.trim().toLowerCase())) {
-        return next(new APIException(400, 'Invalid day'));
-    }
-    if (!validateDayFromInterface(openingDay)) {
-        return next(new APIException(400, 'Invalid opening'));
-    }
-    admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
-        res.status(200).json({ data: { [day]: openingDay } });
-    }).catch((err) => {
-        handleFirebaseError(err, res, next, 'Error updating opening');
-    });
 }).all('/:gymId/openings/:day', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
 
+// Get overridden opening for gym by gymId and day (if day not given, returns all overridden openings)
+router.get('/:gymId/holidays', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const date = req.query.date ? String(req.query.date) : "null";
+    if (date === 'null') {
+        admin.database().ref('/overridden-openings/' + gymId).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                next(new APIException(404, 'No overridden openings found for given gym'));
+            } else {
+                res.status(200).json({ data: { overriddenOpenings: snapshot.val() } });
+            }
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting overridden openings');
+        });
+    } else {
+        if (!validateDate(date)) {
+            return next(new APIException(400, 'Invalid date'));
+        }
+        admin.database().ref('/overridden-openings/' + gymId + '/' + date).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                next(new APIException(404, 'No overridden opening found for given gym and date'));
+            } else {
+                res.status(200).json({ data: { [date]: snapshot.val() } });
+            }
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting overridden opening');
+        });
+    }
+})
+
+// Set overridden opening for gym by gymId and day
+router.post('/:gymId/holidays', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const date = req.query.date ? String(req.query.date) : "null";
+    const day: Day = steriliseDayFromInterface(req.body as Day, false);
+    if (date === 'null' || !validateDate(date)) {
+        return next(new APIException(400, 'Invalid date'));
+    }
+    if (!validateDayFromInterface(day)) {
+        return next(new APIException(400, 'Invalid opening'));
+    }
+    const currentUser = req.headers.uid as string;
+    if (!req.headers.admin) {
+        isOwner(gymId, currentUser).then((isOwner) => {
+            if (isOwner) {
+                admin.database().ref('/overridden-openings/' + gymId + '/' + date).set(day).then(() => {
+                    res.status(200).json({ data: { [date]: day } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error updating overridden opening');
+                });
+            } else {
+                next(new APIException(403, 'Not authorised to set overridden opening for this gym'));
+            }
+        });
+    } else {
+        next(new APIException(403, 'Not authorised to set overridden opening for this gym'));
+    }
+});
+
+// Delete overridden opening for gym by gymId and day
+router.delete('/:gymId/holidays', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const date = req.query.date ? String(req.query.date) : "null";
+    if (date === 'null' || !validateDate(date)) {
+        return next(new APIException(400, 'Invalid date'));
+    }
+    const currentUser = req.headers.uid as string;
+    if (!req.headers.admin) {
+        isOwner(gymId, currentUser).then((isOwner) => {
+            if (isOwner) {
+                admin.database().ref('/overridden-openings/' + gymId + '/' + date).remove().then(() => {
+                    res.status(200).json({ data: { [date]: null } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error deleting overridden opening');
+                });
+            } else {
+                next(new APIException(403, 'Not authorised to delete overridden opening for this gym'));
+            }
+        });
+    } else {
+        next(new APIException(403, 'Not authorised to delete overridden opening for this gym'));
+    }
+}).all('/:gymId/holidays', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
 export default router;
+
+const isOwner = (gymId: string, userId: string):Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/permissions/' + gymId + '/' + userId).once('value', (snapshot: any) => {
+            // if permission power is >= 50, then user is owner
+            if (snapshot.val() !== null && snapshot.val() >= 50) {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
+
+const isStaff = (gymId: string, userId: string):Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/permissions/' + gymId + '/' + userId).once('value', (snapshot: any) => {
+            // if permission power is >= 10, then user is owner
+            if (snapshot.val() !== null && snapshot.val() >= 10) {
+                resolve(true);
+            } else {
+                resolve(false);
+            }
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
