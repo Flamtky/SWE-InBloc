@@ -179,10 +179,18 @@ router.post('/:gymId/openings', (req: Request, res: Response, next: NextFunction
         if (!validateOpenings(opening)) {
             return next(new APIException(400, 'Invalid opening'));
         }
-        admin.database().ref('/openings/' + gymId).set(opening).then(() => {
-            res.status(200).json({ data: { opening } });
+        admin.database().ref('/gyms/' + gymId).once('value').then((snapshot) => {
+            if (snapshot.val() === null) {
+                next(new APIException(404, 'Gym not found'));
+            } else {
+                admin.database().ref('/openings/' + gymId).set(opening).then(() => {
+                    res.status(200).json({ data: { opening } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error updating opening');
+                });
+            }
         }).catch((err) => {
-            handleFirebaseError(err, res, next, 'Error updating opening');
+            handleFirebaseError(err, res, next, 'Error getting gym');
         });
     }
 }).all('/:gymId/openings', (_req: Request, _res: Response, next: NextFunction) => {
@@ -222,10 +230,18 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
                 if (!validateDayFromInterface(openingDay)) {
                     return next(new APIException(400, 'Invalid opening'));
                 }
-                admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
-                    res.status(200).json({ data: { [day]: openingDay } });
+                admin.database().ref('/gyms/' + gymId).once('value').then((snapshot) => {
+                    if (snapshot.val() === null) {
+                        next(new APIException(404, 'Gym not found'));
+                    } else {
+                        admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
+                            res.status(200).json({ data: { [day]: openingDay } });
+                        }).catch((err) => {
+                            handleFirebaseError(err, res, next, 'Error updating opening');
+                        });
+                    }
                 }).catch((err) => {
-                    handleFirebaseError(err, res, next, 'Error updating opening');
+                    handleFirebaseError(err, res, next, 'Error getting gym');
                 });
             } else {
                 next(new APIException(403, 'Not authorised to update opening for this gym'));
@@ -238,10 +254,18 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
         if (!validateDayFromInterface(openingDay)) {
             return next(new APIException(400, 'Invalid opening'));
         }
-        admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
-            res.status(200).json({ data: { [day]: openingDay } });
+        admin.database().ref('/gyms/' + gymId).once('value').then((snapshot) => {
+            if (snapshot.val() === null) {
+                next(new APIException(404, 'Gym not found'));
+            } else {
+                admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
+                    res.status(200).json({ data: { [day]: openingDay } });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error updating opening');
+                });
+            }
         }).catch((err) => {
-            handleFirebaseError(err, res, next, 'Error updating opening');
+            handleFirebaseError(err, res, next, 'Error getting gym');
         });
     }
 }).all('/:gymId/openings/:day', (_req: Request, _res: Response, next: NextFunction) => {
@@ -344,7 +368,7 @@ router.delete('/:gymId/holidays', (req: Request, res: Response, next: NextFuncti
 
 export default router;
 
-const isGymOwner = (gymId: string, userId: string):Promise<boolean> => {
+const isGymOwner = (gymId: string, userId: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
         admin.database().ref('/permissions/' + gymId + '/' + userId).once('value', (snapshot: any) => {
             // if permission power is >= 50, then user is owner
@@ -359,7 +383,7 @@ const isGymOwner = (gymId: string, userId: string):Promise<boolean> => {
     });
 };
 
-const isStaff = (gymId: string, userId: string):Promise<boolean> => {
+const isStaff = (gymId: string, userId: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
         admin.database().ref('/permissions/' + gymId + '/' + userId).once('value', (snapshot: any) => {
             // if permission power is >= 10, then user is owner
