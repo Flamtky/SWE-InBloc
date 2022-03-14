@@ -48,7 +48,7 @@ router.patch('/:gymId', (req: Request, res: Response, next: NextFunction) => {
     const gym: Gym = steriliseGym(req.body as Gym, false);
     const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        isOwner(id, currentUser).then((isOwner) => {
+        isGymOwner(id, currentUser).then((isOwner) => {
             if (isOwner) {
                 if (!validateGym(gym, true)) {
                     return next(new APIException(400, 'Invalid gym'));
@@ -133,7 +133,7 @@ router.post('/:gymId/openings', (req: Request, res: Response, next: NextFunction
     const opening: Openings = steriliseOpenings(req.body as Openings, false);
     const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        isOwner(gymId, currentUser).then((isOwner) => {
+        isGymOwner(gymId, currentUser).then((isOwner) => {
             if (isOwner) {
                 if (!validateOpenings(opening)) {
                     return next(new APIException(400, 'Invalid opening'));
@@ -179,7 +179,7 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
     const openingDay: Day = steriliseDayFromInterface(req.body as Day, false);
     const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        isOwner(gymId, currentUser).then((isOwner) => {
+        isGymOwner(gymId, currentUser).then((isOwner) => {
             if (isOwner) {
                 if (!validateDay(day.trim().toLowerCase())) {
                     return next(new APIException(400, 'Invalid day'));
@@ -246,7 +246,7 @@ router.post('/:gymId/holidays', (req: Request, res: Response, next: NextFunction
     }
     const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        isOwner(gymId, currentUser).then((isOwner) => {
+        isGymOwner(gymId, currentUser).then((isOwner) => {
             if (isOwner) {
                 admin.database().ref('/overridden-openings/' + gymId + '/' + date).set(day).then(() => {
                     res.status(200).json({ data: { [date]: day } });
@@ -271,7 +271,7 @@ router.delete('/:gymId/holidays', (req: Request, res: Response, next: NextFuncti
     }
     const currentUser = req.headers.uid as string;
     if (!req.headers.admin) {
-        isOwner(gymId, currentUser).then((isOwner) => {
+        isGymOwner(gymId, currentUser).then((isOwner) => {
             if (isOwner) {
                 admin.database().ref('/overridden-openings/' + gymId + '/' + date).remove().then(() => {
                     res.status(200).json({ data: { [date]: null } });
@@ -291,7 +291,7 @@ router.delete('/:gymId/holidays', (req: Request, res: Response, next: NextFuncti
 
 export default router;
 
-const isOwner = (gymId: string, userId: string):Promise<boolean> => {
+const isGymOwner = (gymId: string, userId: string):Promise<boolean> => {
     return new Promise((resolve, reject) => {
         admin.database().ref('/permissions/' + gymId + '/' + userId).once('value', (snapshot: any) => {
             // if permission power is >= 50, then user is owner
