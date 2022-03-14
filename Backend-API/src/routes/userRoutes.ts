@@ -7,6 +7,15 @@ import { handleFirebaseError, steriliseUser, validateUser } from "../HelperFunct
 
 const router = express.Router();
 
+
+router.use((req, res, next) => {
+    if (req.headers['content-type'] !== 'application/json') {
+        return res.status(415).json({ error: 'Unsupported Media Type' });
+    }
+    next();
+});
+
+
 // All user routes
 
 // Get all users

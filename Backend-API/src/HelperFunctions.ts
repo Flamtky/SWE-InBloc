@@ -1,7 +1,7 @@
 import APIException from "./APIException";
 import { NextFunction, Request, Response } from "express";
 import User from "./interfaces/User";
-import Gym from "./interfaces/Gym";
+import Gym, { Day, Openings } from "./interfaces/Gym";
 
 // Helper functions for the application
 
@@ -135,3 +135,65 @@ export const steriliseGym = (gym: Gym, fillup: boolean = false): any => {
     }
     return newGym;
 };
+
+// Checks if value is a valid day
+export const validateDay = (day: string) => {
+    return day === 'monday' || day === 'tuesday' || day === 'wednesday' || day === 'thursday' || day === 'friday' || day === 'saturday' || day === 'sunday';
+}
+
+// Checks if value is a valid day from Interface
+export const validateDayFromInterface = (day: Day, validNull:boolean = false) => {
+    if (day?.open === null && day?.closed === null && validNull) {
+        return true;
+    }
+    if (day == undefined || Object.keys(day).length !== 2) {
+        return false;
+    }
+    if (typeof day.open !== 'string' || typeof day.closed !== 'string') {
+        return false;
+    }
+    if (day.open.match(/^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/) === null || day.closed.match(/^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/) === null) {
+        return false;
+    }
+    return true;
+}
+
+// Checks if value is valid Openings
+export const validateOpenings = (openings: Openings) => {
+    if (openings == undefined || Object.keys(openings).length !== 7) {
+        return false;
+    }
+    for (const day in openings) {
+        if (!validateDayFromInterface(openings[day as keyof Openings], true)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Sterilises the Openings
+export const steriliseOpenings = (openings: Openings, fillup: boolean = false): Openings => {
+    const newOpenings: any = {};
+    const key = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    for (const day of key) {
+        newOpenings[day as keyof Openings] = steriliseDayFromInterface(openings[day as keyof Openings], fillup);
+    }
+    return newOpenings;
+}
+
+// Sterilises the Day from Interface
+export const steriliseDayFromInterface = (day: Day, fillup: boolean = false): Day => {
+    const newDay: Day = {
+        open: day?.open ? day.open.trim() : null,
+        closed: day?.closed ? day.closed.trim() : null,
+    };
+    if (!fillup) {
+        // remove empty fields
+        Object.keys(newDay).forEach((key) => {
+            if ((newDay as any)[key] === null) {
+                delete (newDay as any)[key];
+            }
+        });
+    }
+    return newDay;
+}

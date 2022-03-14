@@ -11,7 +11,7 @@ export default interface Gym {
     description?: string;
 }
 
-export interface OpeningHours {
+export interface Openings {
     monday: Day;
     tuesday: Day;
     wednesday: Day;
@@ -22,6 +22,6 @@ export interface OpeningHours {
 }
 
 export interface Day {
-    open: string;
-    closed: string;
+    open?: string;
+    closed?: string;
 }

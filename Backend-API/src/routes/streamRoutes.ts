@@ -8,6 +8,13 @@ import { handleFirebaseError } from "../HelperFunctions";
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+    if (req.headers['content-type'] !== 'text/event-stream') {
+        return res.status(415).json({ error: 'Unsupported Media Type' });
+    }
+    next();
+});
+
 // All stream routes
 
 // stream realtime updates with server side events
