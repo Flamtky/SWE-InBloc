@@ -33,9 +33,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-    // if content-type is not application/json, reject
-    if (req.headers['content-type'] !== 'application/json') {
-        return res.status(415).json({ error: 'Content-Type must be application/json' });
+    // if content-type is not application/json or text/event-stream, reject
+    if (req.headers['content-type'] !== 'application/json' && req.headers['content-type'] !== 'text/event-stream') {
+        return res.status(415).json({ error: 'Unsupported Media Type' });
     }
     // if method is not GET, POST, DELETE, PATCH reject
     if (['GET', 'POST', 'DELETE', 'PATCH'].indexOf(req.method) === -1) {

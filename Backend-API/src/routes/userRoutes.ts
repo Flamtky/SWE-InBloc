@@ -10,6 +10,10 @@ export default class UserRoutes {
 
         // Get all users
         router.get('/', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+
             const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
             admin.database().ref('/users').limitToFirst(limit).once('value', (snapshot: any) => {
                 res.status(200).json({ data: { users: snapshot.val() } });
@@ -22,6 +26,10 @@ export default class UserRoutes {
 
         // Get user by uid
         router.get('/:uid', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+
             const uid = req.params.uid;
             admin.database().ref('/users/' + uid).once('value').then((snapshot) => {
                 if (snapshot.val() === null) {
@@ -36,6 +44,10 @@ export default class UserRoutes {
 
         // Update user by uid
         router.patch('/:uid', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+
             const id = req.params.uid;
             const user: User = steriliseUser(req.body as User, false);
             const currentUser = req.headers.uid;
@@ -56,6 +68,10 @@ export default class UserRoutes {
 
         // Create user with uid
         router.post('/:uid', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+
             const id = req.params.uid;
             const user: User = steriliseUser(req.body as User, true);
             const currentUser = req.headers.uid;
@@ -76,6 +92,10 @@ export default class UserRoutes {
 
         // Delete user by uid
         router.delete('/:uid', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+
             const id = req.params.uid;
             const currentUser = req.headers.uid;
             if (!req.headers.admin) {
@@ -100,6 +120,10 @@ export default class UserRoutes {
 
         // Get user is admin
         router.get('/:uid/admin', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+
             const id = req.params.uid;
             if (!req.headers.admin) {
                 return next(new APIException(403, 'You are not allowed to view the admin status of this user'));
@@ -114,6 +138,10 @@ export default class UserRoutes {
 
         // Change user admin status
         router.patch('/:uid/admin', (req: Request, res: Response, next: NextFunction) => {
+            if (req.headers['content-type'] !== 'application/json') {
+                return next(new APIException(415, 'Content-Type must be application/json'));
+            }
+            
             const id = req.params.uid;
             const newAdminStatus = req.body.admin;
             if (!req.headers.admin) {
@@ -132,32 +160,6 @@ export default class UserRoutes {
                 handleFirebaseError(err, res, next, 'Error setting user admin status');
             });
         }).all('/:uid/admin', (_req: Request, _res: Response, next: NextFunction) => {
-            next(new APIException(405, 'Method not allowed'));
-        });
-
-        // stream realtime updates with text/event-stream
-        router.get('/:uid/stream', (req: Request, res: Response, next: NextFunction) => {
-            const id = req.params.uid;
-            res.writeHead(200, {
-                'Content-Type': 'text/event-stream',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-            });
-            res.write('\n');
-            // add auth
-            const stream = admin.database().ref('/users/' + id).on('value', (snapshot) => {
-                res.write('data: ' + JSON.stringify(snapshot.val()) + '\n\n');
-            }, (err) => {
-                handleFirebaseError(err, res, next, 'Error streaming user');
-            }
-            );
-            res.on('close', () => {
-                admin.database().ref('/users/' + id).off('value', stream);
-                res.end();
-            }
-            );
-
-        }).all('/:uid/stream', (_req: Request, _res: Response, next: NextFunction) => {
             next(new APIException(405, 'Method not allowed'));
         });
 
