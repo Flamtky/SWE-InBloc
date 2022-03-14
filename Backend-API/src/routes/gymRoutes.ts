@@ -19,6 +19,10 @@ router.use((req, res, next) => {
 // Get all gyms
 router.get('/', (req: Request, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+    if (isNaN(limit)) {
+        return res.status(400).json({ error: 'Invalid limit' });
+    }
+    
     admin.database().ref('/gyms').limitToFirst(limit).once('value', (snapshot: any) => {
         res.status(200).json({ data: { gyms: snapshot.val() } });
     }, (error: any) => {
