@@ -12,7 +12,8 @@ const PORT = 1337;
 // Initialize Firebase
 admin.initializeApp({
     credential: admin.credential.cert(require('../adminsdk-config.json')),
-    databaseURL: 'https://inbloc69-default-rtdb.europe-west1.firebasedatabase.app/'
+    databaseURL: 'https://inbloc69-default-rtdb.europe-west1.firebasedatabase.app/',
+    storageBucket: 'gs://inbloc69.appspot.com/'
 });
 
 /*

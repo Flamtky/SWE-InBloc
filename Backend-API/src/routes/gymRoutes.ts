@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from "express";
+import { NextFunction, Request, Response } from "express";
 import * as admin from 'firebase-admin';
 import APIException from "../APIException";
 import Gym, { Day, Openings } from "../interfaces/Gym";
@@ -130,6 +130,33 @@ router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
 }).all('/:gymId', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
+
+// Logo routes
+
+// Get gym logo
+router.get('/:gymId/logo', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    // Get logo from storage logo -> /gyms/gymid.jpg
+    admin.storage().bucket().file('Gyms/' + gymId + '.jpg').get((err: any, file: any) => {
+        if (err) {
+            if (err?.errors[0]?.reason) {
+                next(new APIException(404, 'Gym logo not found'));
+            } else {
+                handleFirebaseError(err, res, next, 'Error getting gym logo');
+            }
+        } else {
+            file.getSignedUrl({
+                action: 'read',
+                expires: '03-09-2491'
+            }).then((url:string) => {
+                res.status(200).json({ data: { logo: url } });
+            });
+        }
+    });
+}).all('/:gymId/logo', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
 
 // Openings routes
 
