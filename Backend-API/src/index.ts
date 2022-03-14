@@ -7,7 +7,6 @@ import APIException from './APIException';
 import * as admin from 'firebase-admin';
 
 const app = express();
-const router = express.Router();
 const PORT = 1337;
 
 // Initialize Firebase
@@ -82,7 +81,7 @@ app.use((req, res, next) => {
     }
 });
 
-app.use('/', PathRouter.init(app, router));
+PathRouter(app);
 
 app.use((_req, _res, next) => {
     next(new APIException(404, 'Not found'));
