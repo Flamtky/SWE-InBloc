@@ -158,10 +158,18 @@ router.post('/:gymId/openings', (req: Request, res: Response, next: NextFunction
                 if (!validateOpenings(opening)) {
                     return next(new APIException(400, 'Invalid opening'));
                 }
-                admin.database().ref('/openings/' + gymId).set(opening).then(() => {
-                    res.status(200).json({ data: { opening } });
+                admin.database().ref('/gyms/' + gymId).once('value').then((snapshot) => {
+                    if (snapshot.val() === null) {
+                        next(new APIException(404, 'Gym not found'));
+                    } else {
+                        admin.database().ref('/openings/' + gymId).set(opening).then(() => {
+                            res.status(200).json({ data: { opening } });
+                        }).catch((err) => {
+                            handleFirebaseError(err, res, next, 'Error updating opening');
+                        });
+                    }
                 }).catch((err) => {
-                    handleFirebaseError(err, res, next, 'Error updating opening');
+                    handleFirebaseError(err, res, next, 'Error getting gym');
                 });
             } else {
                 next(new APIException(403, 'Not authorised to set opening for this gym'));
