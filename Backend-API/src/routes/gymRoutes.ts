@@ -148,15 +148,114 @@ router.get('/:gymId/logo', (req: Request, res: Response, next: NextFunction) => 
             file.getSignedUrl({
                 action: 'read',
                 expires: '03-09-2491'
-            }).then((url:string) => {
-                res.status(200).json({ data: { logo: url } });
+            }).then((url: string) => {
+                res.status(200).json({ data: { logo: url[0] } });
             });
         }
     });
+});
+
+// Set gym logo
+router.post('/:gymId/logo', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const currentUser = req.headers.uid as string;
+    if (!req.headers.admin) {
+        isGymOwner(gymId, currentUser).then((isOwner) => {
+            if (isOwner) {
+                // base 64 image
+                const logo = req.body.logo;
+                if (!logo || !logo.startsWith('data:image/jpeg;base64,')) {
+                    return next(new APIException(400, 'Invalid logo'));
+                }
+                const base64Data = logo.replace(/^data:image\/jpeg;base64,/, '');
+                const fileName = gymId + '.jpg';
+                const image = Buffer.from(base64Data, 'base64');
+                // if image is bigger than 2MB, return error
+                if (image.length > 2000000) {
+                    return next(new APIException(400, 'Image is too big'));
+                }
+                // upload image to storage
+                admin.storage().bucket().file('Gyms/' + fileName).save(image, {
+                    metadata: {
+                        contentType: 'image/jpeg',
+                        public: true,
+                        cacheControl: 'public, max-age=31536000'
+                    }
+                }).then(() => {
+                    admin.storage().bucket().file('Gyms/' + fileName).get((err: any, file: any) => {
+                        if (err) {
+                            if (err?.errors[0]?.reason) {
+                                next(new APIException(404, 'Gym logo not found'));
+                            } else {
+                                handleFirebaseError(err, res, next, 'Error getting gym logo');
+                            }
+                        } else {
+                            file.getSignedUrl({
+                                action: 'read',
+                                expires: '03-09-2491'
+                            }).then((url: string) => {
+                                res.status(200).json({ data: { logo: url[0] } });
+                            });
+                        }
+                    });
+                }).catch((err) => {
+                    handleFirebaseError(err, res, next, 'Error setting gym logo');
+                });
+            } else {
+                next(new APIException(403, 'Not authorised to set this gym logo'));
+            }
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error checking if user is owner');
+        });
+    } else {
+        // base 64 image
+        const logo = req.body.logo;
+        if (!logo || !logo.startsWith('data:image/jpeg;base64,')) {
+            return next(new APIException(400, 'Invalid logo'));
+        }
+        const base64Data = logo.replace(/^data:image\/jpeg;base64,/, '');
+        const fileName = gymId + '.jpg';
+        const image = Buffer.from(base64Data, 'base64');
+        // if image is bigger than 2MB, return error
+        if (image.length > 2000000) {
+            return next(new APIException(400, 'Image is too big'));
+        }
+        // upload image to storage
+        admin.storage().bucket().file('Gyms/' + fileName).save(image, {
+            metadata: {
+                contentType: 'image/jpeg',
+                public: true,
+                cacheControl: 'public, max-age=31536000'
+            }
+        }).then(() => {
+            admin.storage().bucket().file('Gyms/' + fileName).get((err: any, file: any) => {
+                if (err) {
+                    if (err?.errors[0]?.reason) {
+                        next(new APIException(404, 'Gym logo not found'));
+                    } else {
+                        handleFirebaseError(err, res, next, 'Error getting gym logo');
+                    }
+                } else {
+                    file.getSignedUrl({
+                        action: 'read',
+                        expires: '03-09-2491'
+                    }).then((url: string) => {
+                        res.status(200).json({ data: { logo: url[0] } });
+                    });
+                }
+            });
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error setting gym logo');
+        });
+    }
 }).all('/:gymId/logo', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
-
+/*
+body {
+    "logo": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAgACADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2N"
+}
+*/
 
 // Openings routes
 
