@@ -123,7 +123,7 @@ export const steriliseGym = (gym: Gym, fillup: boolean = false): any => {
         phone: gym.phone ? gym.phone.trim() : null,
         email: gym.email ? gym.email.trim() : null,
         website: gym.website ? gym.website.trim() : null,
-        description: gym.description ? gym.description.trim() : "",
+        description: gym.description ? gym.description.trim() : null,
     };
     if (!fillup) {
         // remove empty fields

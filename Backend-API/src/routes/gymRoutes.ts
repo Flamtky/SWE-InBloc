@@ -22,7 +22,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
     if (isNaN(limit)) {
         return res.status(400).json({ error: 'Invalid limit' });
     }
-    
+
     admin.database().ref('/gyms').limitToFirst(limit).once('value', (snapshot: any) => {
         res.status(200).json({ data: { gyms: snapshot.val() } });
     }, (error: any) => {
@@ -54,6 +54,9 @@ router.patch('/:gymId', (req: Request, res: Response, next: NextFunction) => {
     if (!req.headers.admin) {
         isGymOwner(id, currentUser).then((isOwner) => {
             if (isOwner) {
+                if (Object.keys(gym).length === 0) {
+                    return res.status(400).json({ error: 'No gym data provided' });
+                }
                 if (!validateGym(gym, true)) {
                     return next(new APIException(400, 'Invalid gym'));
                 }
@@ -69,7 +72,17 @@ router.patch('/:gymId', (req: Request, res: Response, next: NextFunction) => {
             handleFirebaseError(err, res, next, 'Error checking if user is owner');
         });
     } else {
-        next(new APIException(403, 'Not authorised to update this gym'));
+        if (Object.keys(gym).length === 0) {
+            return res.status(400).json({ error: 'No gym data provided' });
+        }
+        if (!validateGym(gym, true)) {
+            return next(new APIException(400, 'Invalid gym'));
+        }
+        admin.database().ref('/gyms/' + id).update(gym).then(() => {
+            res.status(200).json({ data: { gym } });
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error updating gym');
+        });
     }
 });
 
@@ -77,9 +90,12 @@ router.patch('/:gymId', (req: Request, res: Response, next: NextFunction) => {
 router.post('/:gymid', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymid;
     const gym: Gym = steriliseGym(req.body as Gym, true);
-    const currentUser = req.headers.uid;
+
     if (!req.headers.admin) {
         return next(new APIException(403, 'Not authorised to create this gym'));
+    }
+    if (Object.keys(gym).length === 0) {
+        return res.status(400).json({ error: 'No gym data provided' });
     }
     if (!validateGym(gym)) {
         return next(new APIException(400, 'Invalid gym'));
@@ -152,7 +168,14 @@ router.post('/:gymId/openings', (req: Request, res: Response, next: NextFunction
             }
         });
     } else {
-        next(new APIException(403, 'Not authorised to set opening for this gym'));
+        if (!validateOpenings(opening)) {
+            return next(new APIException(400, 'Invalid opening'));
+        }
+        admin.database().ref('/openings/' + gymId).set(opening).then(() => {
+            res.status(200).json({ data: { opening } });
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error updating opening');
+        });
     }
 }).all('/:gymId/openings', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
@@ -201,7 +224,17 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
             }
         });
     } else {
-        next(new APIException(403, 'Not authorised to update opening for this gym'));
+        if (!validateDay(day.trim().toLowerCase())) {
+            return next(new APIException(400, 'Invalid day'));
+        }
+        if (!validateDayFromInterface(openingDay)) {
+            return next(new APIException(400, 'Invalid opening'));
+        }
+        admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
+            res.status(200).json({ data: { [day]: openingDay } });
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error updating opening');
+        });
     }
 }).all('/:gymId/openings/:day', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
@@ -262,7 +295,11 @@ router.post('/:gymId/holidays', (req: Request, res: Response, next: NextFunction
             }
         });
     } else {
-        next(new APIException(403, 'Not authorised to set overridden opening for this gym'));
+        admin.database().ref('/overridden-openings/' + gymId + '/' + date).set(day).then(() => {
+            res.status(200).json({ data: { [date]: day } });
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error updating overridden opening');
+        });
     }
 });
 
@@ -287,7 +324,11 @@ router.delete('/:gymId/holidays', (req: Request, res: Response, next: NextFuncti
             }
         });
     } else {
-        next(new APIException(403, 'Not authorised to delete overridden opening for this gym'));
+        admin.database().ref('/overridden-openings/' + gymId + '/' + date).remove().then(() => {
+            res.status(200).json({ data: { [date]: null } });
+        }).catch((err) => {
+            handleFirebaseError(err, res, next, 'Error deleting overridden opening');
+        });
     }
 }).all('/:gymId/holidays', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));

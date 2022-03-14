@@ -24,7 +24,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
     if (isNaN(limit)) {
         return res.status(400).json({ error: 'Invalid limit' });
     }
-    
+
     admin.database().ref('/users').limitToFirst(limit).once('value', (snapshot: any) => {
         res.status(200).json({ data: { users: snapshot.val() } });
     }, (error: any) => {
