@@ -7,13 +7,13 @@ import APIException from './APIException';
 import * as admin from 'firebase-admin';
 
 const app = express();
-const router = express.Router();
 const PORT = 1337;
 
 // Initialize Firebase
 admin.initializeApp({
     credential: admin.credential.cert(require('../adminsdk-config.json')),
-    databaseURL: 'https://inbloc69-default-rtdb.europe-west1.firebasedatabase.app/'
+    databaseURL: 'https://inbloc69-default-rtdb.europe-west1.firebasedatabase.app/',
+    storageBucket: 'gs://inbloc69.appspot.com/'
 });
 
 /*
@@ -27,14 +27,15 @@ admin.initializeApp({
    - NotFoundHandler for handling 404
    - Errorhandler for error handling
 */
+
 app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
 
 app.use((req, res, next) => {
-    // if content-type is not application/json, reject
-    if (req.headers['content-type'] !== 'application/json') {
-        return res.status(415).json({ error: 'Content-Type must be application/json' });
+    // if content-type is not application/json or text/event-stream, reject
+    if (req.headers['content-type'] !== 'application/json' && req.headers['content-type'] !== 'text/event-stream') {
+        return res.status(415).json({ error: 'Unsupported Media Type' });
     }
     // if method is not GET, POST, DELETE, PATCH reject
     if (['GET', 'POST', 'DELETE', 'PATCH'].indexOf(req.method) === -1) {
@@ -44,6 +45,12 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
+    // if request from localhost and header Debug is set, skip authentication
+    if (req.headers.host === 'localhost:1337' && req.headers.debug) {
+        req.headers.admin = "true";
+        return next();
+    }
+
     // Checks Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -60,22 +67,22 @@ app.use((req, res, next) => {
             .then((decodedToken) => {
                 // Checks if its an admin and checks if the users email is verified
                 admin.auth().getUser(decodedToken.uid).then((userRecord) => {
-                    req.headers.admin = userRecord.customClaims.admin || false;
-                    if (!userRecord.emailVerified)
+                    req.headers.admin = userRecord.customClaims?.admin || false;
+                    if (!userRecord.emailVerified) {
                         return res.status(403).json({ error: 'Email not verified' });
+                    } else {
+                        req.headers.uid = decodedToken.uid;
+                    }
+                    next();
                 });
-
-                // If the token is valid and email is verified, the request is authorized
-                req.headers.uid = decodedToken.uid;
-                next();
             }
-            ).catch(() => {
-                return res.status(401).json({ error: 'Invalid token' });
+            ).catch((e) => {
+                return res.status(401).json({ error: e.code === 'auth/id-token-expired' ? 'Token expired' : 'Invalid token' });
             });
     }
 });
 
-app.use('/', PathRouter.init(app, router));
+PathRouter(app);
 
 app.use((_req, _res, next) => {
     next(new APIException(404, 'Not found'));
@@ -86,8 +93,11 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof APIException) {
         return res.status(err.code).json({ error: err.message });
     }
-
-    console.error((err as Error).stack || err);
+    // Catch all json pharser errors
+    if (err instanceof SyntaxError && 'body' in err) {
+        return res.status(400).json({ error: 'Invalid Payload' });
+    }
+    console.error(err);
     return res.status(500).json({ error: 'Internal server error' });
 });
 
