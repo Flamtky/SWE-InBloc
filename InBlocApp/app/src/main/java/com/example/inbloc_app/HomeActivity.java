@@ -12,11 +12,11 @@ import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.example.inbloc_app.Fragments.MyGyms;
-import com.example.inbloc_app.Fragments.MyStats;
-import com.example.inbloc_app.Fragments.Projects;
-import com.example.inbloc_app.Fragments.Search;
-import com.example.inbloc_app.Fragments.Settings;
+import com.example.inbloc_app.Fragments.MyGymsFragment;
+import com.example.inbloc_app.Fragments.MyStatsFragment;
+import com.example.inbloc_app.Fragments.ProjectsFragment;
+import com.example.inbloc_app.Fragments.SearchFragment;
+import com.example.inbloc_app.Fragments.SettingsFragment;
 import com.google.android.material.navigation.NavigationView;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
@@ -43,7 +43,7 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                    new MyGyms()).commit();
+                    new MyGymsFragment()).commit();
             navigationView.setCheckedItem(R.id.nav_my_gyms);
         }
 
@@ -54,23 +54,23 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         switch (item.getItemId()){
             case R.id.nav_find_gyms:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new Search()).commit();
+                        new SearchFragment()).commit();
                 break;
             case R.id.nav_projects:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new Projects()).commit();
+                        new ProjectsFragment()).commit();
                 break;
             case R.id.nav_my_gyms:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new MyGyms()).commit();
+                        new MyGymsFragment()).commit();
                 break;
             case R.id.nav_stats:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new MyStats()).commit();
+                        new MyStatsFragment()).commit();
                 break;
             case R.id.nav_settings:
                 getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container,
-                        new Settings()).commit();
+                        new SettingsFragment()).commit();
                 break;
             case R.id.nav_logout:
                 Toast.makeText(this, "Logged Out", Toast.LENGTH_SHORT).show();

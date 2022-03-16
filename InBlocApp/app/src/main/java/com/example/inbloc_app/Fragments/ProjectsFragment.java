@@ -11,11 +11,11 @@ import androidx.fragment.app.Fragment;
 
 import com.example.inbloc_app.R;
 
-public class MyGyms extends Fragment {
+public class ProjectsFragment extends Fragment {
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_my_gyms, container, false);
+        return inflater.inflate(R.layout.fragment_projects, container, false);
     }
 }

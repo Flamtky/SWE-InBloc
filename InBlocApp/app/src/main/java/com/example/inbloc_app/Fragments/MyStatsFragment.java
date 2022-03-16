@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.inbloc_app.R;
 
-public class MyStats extends Fragment {
+public class MyStatsFragment extends Fragment {
 
     @Nullable
     @Override
