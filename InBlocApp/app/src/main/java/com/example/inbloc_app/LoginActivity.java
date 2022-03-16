@@ -7,7 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-public class MainActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,10 +22,23 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        Button goToRegisterBtn = (Button) findViewById(R.id.signUpButtonMain);
+        goToRegisterBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                goToRegister(view);
+            }
+        });
     }
 
     public void skipToHome(View view){
         Intent intent = new Intent(this, HomeActivity.class);
         startActivity(intent);
     }
+
+    public void goToRegister(View view){
+        Intent intent = new Intent(this, RegisterActivity.class);
+        startActivity(intent);
+    }
+
 }
