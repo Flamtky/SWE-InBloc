@@ -2,6 +2,8 @@ package com.example.inbloc_app.Fragments;
 
 import android.os.Bundle;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
 import android.view.LayoutInflater;
@@ -15,6 +17,7 @@ import com.example.inbloc_app.R;
  * Use the {@link GymFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
+
 public class GymFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match

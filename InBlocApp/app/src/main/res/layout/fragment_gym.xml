@@ -5,7 +5,8 @@
     android:id="@+id/frameLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".Fragments.GymFragment">
+    tools:context=".Fragments.GymFragment"
+    android:background="@android:color/holo_blue_dark">
 
     <TextView
         android:id="@+id/textView2"

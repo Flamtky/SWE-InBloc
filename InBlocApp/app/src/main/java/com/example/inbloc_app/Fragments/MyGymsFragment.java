@@ -1,5 +1,6 @@
 package com.example.inbloc_app.Fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -67,7 +68,8 @@ public class MyGymsFragment extends Fragment{
         goToGymBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Navigation.findNavController(view).navigate(R.id.action_myGyms_to_gymFragment);
+//                Navigation.findNavController(view).navigate(R.id.action_myGyms_to_gymFragment);
+
             }
         });
 
