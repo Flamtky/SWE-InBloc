@@ -67,9 +67,8 @@ public class MyGymsFragment extends Fragment{
         Button goToGymBtn = (Button) view.findViewById(R.id.goToFragment2);
         goToGymBtn.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-//                Navigation.findNavController(view).navigate(R.id.action_myGyms_to_gymFragment);
-
+            public void onClick(View v) {
+                Navigation.findNavController(view).navigate(R.id.action_myGyms_to_gymFragment);
             }
         });
 

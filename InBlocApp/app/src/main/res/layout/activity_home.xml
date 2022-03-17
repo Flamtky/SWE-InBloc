@@ -23,10 +23,12 @@
             android:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-        <FrameLayout
-            android:id="@+id/fragment_container"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+<!--        <FrameLayout-->
+<!--            android:id="@+id/fragment_container"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="match_parent"-->
+<!--            app:defaultNavHost="true"-->
+<!--            app:navGraph="@navigation/navgraph"/>-->
 
 <!--        <androidx.fragment.app.FragmentContainerView-->
 <!--            android:id="@+id/fragment_container"-->
@@ -39,6 +41,15 @@
 <!--            app:layout_constraintBottom_toBottomOf="parent"-->
 <!--            app:defaultNavHost="true"-->
 <!--            app:navGraph="@navigation/navgraph" />-->
+
+        <fragment
+            android:id="@+id/fragment_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:name="androidx.navigation.fragment.NavHostFragment"
+            app:navGraph="@navigation/navgraph"
+            app:defaultNavHost="true"/>
 
     </LinearLayout>
 
