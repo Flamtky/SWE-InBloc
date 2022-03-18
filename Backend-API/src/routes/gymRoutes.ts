@@ -19,7 +19,7 @@ router.use((req, res, next) => {
 // Get all gyms
 router.get('/', (req: Request, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-    if (isNaN(limit)) {
+    if (isNaN(limit) || limit < 1 || limit > 1000) {
         return res.status(400).json({ error: 'Invalid limit' });
     }
 
@@ -166,6 +166,26 @@ router.post('/:gymId/openings', (req: Request, res: Response, next: NextFunction
     }
 });
 
+
+// Delete opening for gym by gymId
+router.delete('/:gymId/openings', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const currentUser = req.headers.uid as string;
+    if (!req.headers.admin) {
+        isGymOwner(gymId, currentUser).then((isOwner) => {
+            if (isOwner) {
+                deleteOpeningByGymId(gymId, next, res);
+            } else {
+                next(new APIException(403, 'Not authorised to delete opening for this gym'));
+            }
+        });
+    } else {
+        deleteOpeningByGymId(gymId, next, res);
+    }
+}).all('/:gymId/openings', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
 // Get opening for gym by gymId and day
 router.get('/:gymId/openings/:day', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
@@ -199,25 +219,6 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
     } else {
         updateOpeningFromDayByGymId(gymId, next, day, openingDay, res);
     }
-});
-
-// Delete opening for gym by gymId
-router.delete('/:gymId/openings', (req: Request, res: Response, next: NextFunction) => {
-    const gymId = req.params.gymId;
-    const currentUser = req.headers.uid as string;
-    if (!req.headers.admin) {
-        isGymOwner(gymId, currentUser).then((isOwner) => {
-            if (isOwner) {
-                deleteOpeningByGymId(gymId, next, res);
-            } else {
-                next(new APIException(403, 'Not authorised to delete opening for this gym'));
-            }
-        });
-    } else {
-        deleteOpeningByGymId(gymId, next, res);
-    }
-}).all('/:gymId/openings', (_req: Request, _res: Response, next: NextFunction) => {
-    next(new APIException(405, 'Method not allowed'));
 });
 
 // Delete opening for gym by gymId and day
@@ -406,7 +407,7 @@ function deleteOpeningFromDayByGymId(gymId: string, next: NextFunction, day: str
             next(new APIException(404, 'Gym not found'));
         } else {
             admin.database().ref('/openings/' + gymId + '/' + day).remove().then(() => {
-                res.status(200).json({ data: { message: 'Opening deleted' } });
+                res.status(200).json({ data: null });
             }).catch((err) => {
                 handleFirebaseError(err, res, next, 'Error deleting opening');
             });
@@ -422,7 +423,7 @@ function deleteOpeningByGymId(gymId: string, next: NextFunction, res: Response<a
             next(new APIException(404, 'Gym not found'));
         } else {
             admin.database().ref('/openings/' + gymId).remove().then(() => {
-                res.status(200).json({ data: { message: 'Opening deleted' } });
+                res.status(200).json({ data: null });
             }).catch((err) => {
                 handleFirebaseError(err, res, next, 'Error deleting opening');
             });
@@ -517,7 +518,7 @@ function createLogo(req: Request, res: Response, next: NextFunction, gymId: stri
 
 function deleteLogo(gymId: string, next: NextFunction, res: Response<any, Record<string, any>>) {
     admin.storage().bucket().file('Gyms/' + gymId + '/logo.jpg').delete().then(() => {
-        res.status(200).json({ data: { message: 'Logo deleted' } });
+        res.status(200).json({ data: null });
     }).catch((err) => {
         handleFirebaseError(err, res, next, 'Error deleting logo');
     });

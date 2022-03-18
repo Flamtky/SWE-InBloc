@@ -21,7 +21,7 @@ router.use((req, res, next) => {
 // Get all users
 router.get('/', (req: Request, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-    if (isNaN(limit)) {
+    if (isNaN(limit) || limit < 1 || limit > 1000) {
         return res.status(400).json({ error: 'Invalid limit' });
     }
 
