@@ -231,7 +231,7 @@ export const validateWall = (wall: Wall) => {
     if (wall.features == undefined || features.length < 1) {
         return false;
     }
-    
+
     return validateWallFeatures(features);
 }
 

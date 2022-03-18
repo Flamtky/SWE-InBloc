@@ -98,21 +98,25 @@ router.post('/:uid', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Delete user by uid
-// TODO: add option to keep user auth (default is to delete)
 router.delete('/:uid', (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.uid;
     const currentUser = req.headers.uid;
+    const keepAuth = req.query.keepAuth === 'true';
     if (!req.headers.admin) {
         if (id !== currentUser) {
             return next(new APIException(403, 'You are not allowed to delete this user'));
         }
     }
     admin.database().ref('/users/' + id).remove().then(() => {
-        admin.auth().deleteUser(id).then(() => {
+        if (!keepAuth) {
+            admin.auth().deleteUser(id).then(() => {
+                res.status(200).json({ data: { user: null } });
+            }).catch((err) => {
+                handleFirebaseError(err, res, next, 'Error deleting user auth');
+            });
+        } else {
             res.status(200).json({ data: { user: null } });
-        }).catch((err) => {
-            handleFirebaseError(err, res, next, 'Error deleting user auth');
-        });
+        }
     }).catch((err) => {
         handleFirebaseError(err, res, next, 'Error deleting user');
     });
