@@ -98,6 +98,7 @@ router.post('/:uid', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Delete user by uid
+// TODO: add option to keep user auth (default is to delete)
 router.delete('/:uid', (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.uid;
     const currentUser = req.headers.uid;
