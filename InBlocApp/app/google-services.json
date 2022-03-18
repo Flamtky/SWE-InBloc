@@ -10,7 +10,6 @@
       "client_info": {
         "mobilesdk_app_id": "1:406472662977:android:c6f1eb9ac79382f27f1940",
         "android_client_info": {
-//          "package_name": "com.flamtkz_x.inbloc"
           "package_name": "com.example.inbloc_app"
         }
       },
