@@ -2,6 +2,7 @@ import APIException from "./APIException";
 import { NextFunction, Request, Response } from "express";
 import User from "./interfaces/User";
 import Gym, { Day, Openings } from "./interfaces/Gym";
+import Wall, { WallFeatures } from "./interfaces/Wall";
 
 // Helper functions for the application
 
@@ -215,6 +216,33 @@ export const validateDate = (date: string) => {
     }
     if (parseInt(dateArray[1]) < 1 || parseInt(dateArray[1]) > 12 || parseInt(dateArray[2]) < 1 || parseInt(dateArray[2]) > 31) {
         return false;
+    }
+    return true;
+}
+
+export const validateWall = (wall: Wall) => {
+    const features = wall.features ? (wall.features as string).split(',') : [];
+    if (wall == undefined || Object.keys(wall).length !== 2) {
+        return false;
+    }
+    if (wall.setDate == undefined || wall.setDate.length !== 10 || !validateDate(wall.setDate)) {
+        return false;
+    }
+    if (wall.features == undefined || features.length < 1) {
+        return false;
+    }
+    
+    return validateWallFeatures(features);
+}
+
+export const validateWallFeatures = (features: string[]) => {
+    const usedFeatures = [] as string[];
+    for (const feature of features) {
+        // if feature is already used or feature is not valid
+        if (usedFeatures.includes(feature) || WallFeatures[feature.toUpperCase() as keyof typeof WallFeatures] == undefined) {
+            return false;
+        }
+        usedFeatures.push(feature);
     }
     return true;
 }
