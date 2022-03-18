@@ -116,6 +116,7 @@ router.post('/:gymid', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Delete gym by gymId
+// TODO: delete every opening, holidays, logo associated with gym
 router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
     const currentUser = req.headers.uid;
@@ -133,7 +134,7 @@ router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
 
 // Logo routes
 
-// Get gym logo
+// Get gym logo // TODO: change logo url to Gyms/:gymId/logo.jpg
 router.get('/:gymId/logo', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
     // Get logo from storage logo -> /gyms/gymid.jpg
@@ -172,7 +173,7 @@ router.post('/:gymId/logo', (req: Request, res: Response, next: NextFunction) =>
                 const image = Buffer.from(base64Data, 'base64');
                 // if image is bigger than 2MB, return error
                 if (image.length > 2000000) {
-                    return next(new APIException(400, 'Image is too big'));
+                    return next(new APIException(413, 'Image is too big'));
                 }
                 // upload image to storage
                 admin.storage().bucket().file('Gyms/' + fileName).save(image, {
@@ -218,7 +219,7 @@ router.post('/:gymId/logo', (req: Request, res: Response, next: NextFunction) =>
         const image = Buffer.from(base64Data, 'base64');
         // if image is bigger than 2MB, return error
         if (image.length > 2000000) {
-            return next(new APIException(400, 'Image is too big'));
+            return next(new APIException(413, 'Image is too big'));
         }
         // upload image to storage
         admin.storage().bucket().file('Gyms/' + fileName).save(image, {
@@ -251,6 +252,8 @@ router.post('/:gymId/logo', (req: Request, res: Response, next: NextFunction) =>
 }).all('/:gymId/logo', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
+
+//TODO: delete logo route
 
 // Openings routes
 
@@ -393,7 +396,6 @@ router.patch('/:gymId/openings/:day', (req: Request, res: Response, next: NextFu
     next(new APIException(405, 'Method not allowed'));
 });
 
-//TODO: Add to docs
 // Get overridden opening for gym by gymId and day (if day not given, returns all overridden openings)
 router.get('/:gymId/holidays', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
