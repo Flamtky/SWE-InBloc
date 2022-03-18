@@ -16,7 +16,6 @@ router.use((req, res, next) => {
 });
 
 // All wall routes
-// TODO: added routes to docs
 
 // Get all walls or for given gym
 router.get('/', (req: Request, res: Response, next: NextFunction) => {
@@ -94,6 +93,7 @@ router.post('/:wallId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
     const wallId = req.params.wallId;
     const wallSetDate: Date = new Date(wall.setDate);
+    const currentUser = req.headers.uid as string;
     if (!validateWall(wall)) {
         return res.status(400).json({ error: 'Invalid wall' });
     }
@@ -103,21 +103,30 @@ router.post('/:wallId', (req: Request, res: Response, next: NextFunction) => {
     if (wall.setDate === null || wallSetDate.toString() === 'Invalid Date' || wallSetDate.getFullYear() < new Date().getFullYear()) {
         return res.status(400).json({ error: 'Invalid setDate' });
     }
-
-    admin.database().ref('/gyms/' + gymId).once('value', (snapshotGym: any) => {
-        if (snapshotGym.val() === null) {
-            return res.status(404).json({ error: 'Gym not found' });
-        } else {
-            admin.database().ref('/walls/' + gymId + "/" + wallId).set(wall).then(() => {
-                res.status(200).json({ data: { wall } });
-            }).catch((error: any) => {
-                handleFirebaseError(error, res, next, 'Error creating wall');
+    if (!validateWallFeatures(wall.features.split(','))) {
+        return res.status(400).json({ error: 'Invalid features' });
+    }
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
+            admin.database().ref('/gyms/' + gymId).once('value', (snapshotGym: any) => {
+                if (snapshotGym.val() === null) {
+                    return res.status(404).json({ error: 'Gym not found' });
+                } else {
+                    admin.database().ref('/walls/' + gymId + "/" + wallId).set(wall).then(() => {
+                        res.status(200).json({ data: { wall } });
+                    }).catch((error: any) => {
+                        handleFirebaseError(error, res, next, 'Error creating wall');
+                    });
+                }
+            }).catch((err) => {
+                handleFirebaseError(err, res, next, 'Error getting gym');
             });
+        } else {
+            return res.status(403).json({ error: 'Not authorised to create a wall for this gym' });
         }
     }).catch((err) => {
-        handleFirebaseError(err, res, next, 'Error getting gym');
+        handleFirebaseError(err, res, next, 'Error checking if user is staff');
     });
-
 });
 
 // Update setDate for given wall
@@ -211,6 +220,7 @@ router.patch('/:wallId/feature', (req: Request, res: Response, next: NextFunctio
     next(new APIException(405, 'Method not allowed'));
 });
 
+// TODO: add to docs
 // Delete wall
 router.delete('/:wallId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
