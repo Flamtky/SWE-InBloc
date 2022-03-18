@@ -94,7 +94,6 @@ router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
 // Get gym logo
 router.get('/:gymId/logo', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
-    // Get logo from storage logo -> /gyms/gymid.jpg
     getFileLink(gymId, next, res);
 });
 

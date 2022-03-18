@@ -126,8 +126,8 @@ router.patch('/:wallId/setDate', (req: Request, res: Response, next: NextFunctio
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
     const wallId = req.params.wallId;
     const currentUser = req.headers.uid as string;
-    isStaff(gymId, currentUser).then((isStaff: boolean) => {
-        if (isStaff || req.headers.admin) {
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
             if (gymId === null) {
                 return res.status(400).json({ error: 'Invalid gymId' });
             }
@@ -172,8 +172,8 @@ router.patch('/:wallId/feature', (req: Request, res: Response, next: NextFunctio
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
     const wallId = req.params.wallId;
     const currentUser = req.headers.uid as string;
-    isStaff(gymId, currentUser).then((isStaff: boolean) => {
-        if (isStaff || req.headers.admin) {
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
             if (gymId === null) {
                 return res.status(400).json({ error: 'Invalid gymId' });
             }
@@ -216,8 +216,8 @@ router.delete('/:wallId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
     const wallId = req.params.wallId;
     const currentUser = req.headers.uid as string;
-    isStaff(gymId, currentUser).then((isStaff: boolean) => {
-        if (isStaff || req.headers.admin) {
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
             if (gymId === null) {
                 return res.status(400).json({ error: 'Invalid gymId' });
             }
@@ -299,8 +299,8 @@ router.post('/:wallId/image', (req: Request, res: Response, next: NextFunction) 
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
     const wallId = req.params.wallId;
     const currentUser = req.headers.uid as string;
-    isStaff(gymId, currentUser).then((isStaff: boolean) => {
-        if (isStaff || req.headers.admin) {
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
             if (gymId === null) {
                 return res.status(400).json({ error: 'Invalid gymId' });
             }
@@ -354,8 +354,8 @@ router.delete('/:wallId/image', (req: Request, res: Response, next: NextFunction
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
     const wallId = req.params.wallId;
     const currentUser = req.headers.uid as string;
-    isStaff(gymId, currentUser).then((isStaff: boolean) => {
-        if (isStaff || req.headers.admin) {
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
             if (gymId === null) {
                 return res.status(400).json({ error: 'Invalid gymId' });
             }
