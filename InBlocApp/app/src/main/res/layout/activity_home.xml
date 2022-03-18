@@ -18,29 +18,10 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@color/design_default_color_primary"
+            android:background="@color/main_red"
             android:elevation="4dp"
             android:popupTheme="@style/ThemeOverlay.AppCompat.Light"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar" />
-
-<!--        <FrameLayout-->
-<!--            android:id="@+id/fragment_container"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            app:defaultNavHost="true"-->
-<!--            app:navGraph="@navigation/navgraph"/>-->
-
-<!--        <androidx.fragment.app.FragmentContainerView-->
-<!--            android:id="@+id/fragment_container"-->
-<!--            android:name="androidx.navigation.fragment.NavHostFragment"-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="match_parent"-->
-<!--            app:layout_constraintLeft_toLeftOf="parent"-->
-<!--            app:layout_constraintRight_toRightOf="parent"-->
-<!--            app:layout_constraintTop_toTopOf="parent"-->
-<!--            app:layout_constraintBottom_toBottomOf="parent"-->
-<!--            app:defaultNavHost="true"-->
-<!--            app:navGraph="@navigation/navgraph" />-->
 
         <fragment
             android:id="@+id/fragment_container"
