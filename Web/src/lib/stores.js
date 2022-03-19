@@ -7,7 +7,8 @@ if(browser) {
 }
 
 export const loggedin_user = writable(null);
-export const local_user_data = writable( storage);
+export const local_user_data = writable(storage);
+export const firstLogin = writable(false);
 
 
 local_user_data.subscribe(val => browser && localStorage.setItem("local_user_data", val));

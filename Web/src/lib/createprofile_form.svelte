@@ -7,7 +7,7 @@
 		signOut,
 		sendEmailVerification
 	} from 'firebase/auth';
-	import { loggedin_user, local_user_data } from '$lib/stores.js';
+	import { loggedin_user, local_user_data, firstLogin } from '$lib/stores.js';
 	import { browser } from '$app/env';
 	let errorMessage = '';
 	let username = '';
@@ -15,8 +15,9 @@
 	let registerBody = {
 		email: '',
 		username: '',
-		zip: null
 	};
+	$loggedin_user = null;
+	$local_user_data = null;
 
     async function createProfile() {
 		errorMessage = '';
@@ -28,7 +29,9 @@
 		let token = await user.getIdToken(/* forceRefresh */ true);
 		registerBody.email = user.email;
 		registerBody.username = username;
-		registerBody.zip = zipcode.toString();
+		if(zipcode != null){
+			registerBody.zip = zipcode.toString();
+		}
 		let res = await fetch(`http://localhost:1337/users/${user.uid}`, {
 			method: 'POST',
 			headers: {
@@ -41,9 +44,10 @@
 		console.log(data);
 		if (res.ok) {
 			$loggedin_user = user;
+			$firstLogin = false;
 			if (browser) {
 				$local_user_data = JSON.stringify(data.data.user);
-				window.location.href = '/';
+				goto("/");
 			}
 		} else {
 			errorMessage = data.error;

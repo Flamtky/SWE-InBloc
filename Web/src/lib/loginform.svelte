@@ -1,18 +1,18 @@
 <script>
-    import '../lib/firebase.js';
+	import '../lib/firebase.js';
 	import {
 		getAuth,
 		signInWithEmailAndPassword,
 		signOut,
 		sendEmailVerification
 	} from 'firebase/auth';
-	import { loggedin_user, local_user_data } from '$lib/stores.js';
+	import { loggedin_user, local_user_data, firstLogin } from '$lib/stores.js';
 	import { browser } from '$app/env';
+	import {goto} from '$app/navigation';
 	let email = '';
 	let password = '';
 	let errorMessage = '';
-    export let data_not_found = false;
-
+	let showLoading = false;
 	//Login with firebase
 	async function tryLogin() {
 		errorMessage = '';
@@ -24,6 +24,7 @@
 					signOut(getAuth())
 						.then(function () {
 							$loggedin_user = null;
+							$local_user_data = null;
 							console.log('You got logged out because you are not verified.');
 						})
 						.catch(function (error) {
@@ -59,24 +60,28 @@
 							.then(async (response) => {
 								console.log(response);
 								if (!response) {
-									console.log("no response");
-									errorMessage = "API error";
+									console.log('no response');
+									errorMessage = 'API error';
 									$loggedin_user = null;
 									$local_user_data = null;
 									return;
-								}else if(response.status != 404){
-									errorMessage = "DB Entrie not found";
+								} else if (response.status == 404) {
+									errorMessage = 'DB Entrie not found';
 									$loggedin_user = null;
-									data_not_found = true;
+									$local_user_data = null;
+									$firstLogin = true;
 									return;
 								} else {
-									console.log("response");
+									console.log('response');
 									//console.log(await response.json());
 									var json = await response.json();
 									console.log(json.data.user);
 									if (browser) {
 										$local_user_data = JSON.stringify(json.data.user);
-										window.location.href = '/';
+										showLoading = true;
+										setInterval(() => {
+											goto('/');
+										}, 500);
 									}
 								}
 							});
@@ -89,37 +94,41 @@
 				errorMessage = error.code;
 			});
 	}
-
 </script>
 
 <section class="login-dark">
-    <div class="form">
-        <h2 class="">Login</h2>
-        <div class="illustration"><i class="icon ion-ios-locked-outline" /></div>
-            <div class="mb-3">
-                <input
-                    class="form-control"
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    bind:value={email}
-                />
-            </div>
-            <div class="mb-3">
-                <input
-                    class="form-control"
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    bind:value={password}
-                />
-            </div>
-            <div class="mb-3">
-                <button class="btn btn-primary d-block w-100" on:click={tryLogin}>Log In</button>
-            </div>
-            <a class="forgot" href="/forgotpassword">Forgot your password?</a>
-        <p class="text-danger">{errorMessage}</p>
-    </div>
+	<div class="form">
+		<h2 class="">Login</h2>
+		<div class="illustration"><i class="icon ion-ios-locked-outline" /></div>
+		<div class="mb-3">
+			<input
+				class="form-control"
+				type="email"
+				name="email"
+				placeholder="Email"
+				bind:value={email}
+			/>
+		</div>
+		<div class="mb-3">
+			<input
+				class="form-control"
+				type="password"
+				name="password"
+				placeholder="Password"
+				bind:value={password}
+			/>
+		</div>
+		<div class="mb-3">
+			{#if showLoading}
+				<button class="btn btn-primary d-block w-100">Logging in...</button>
+			{:else}
+				<button class="btn btn-primary d-block w-100" on:click={tryLogin}>Log In</button>
+			{/if}
+		</div>
+
+		<a class="forgot" href="/forgotpassword">Forgot your password?</a>
+		<p class="text-danger">{errorMessage}</p>
+	</div>
 </section>
 
 <style>

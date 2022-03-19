@@ -11,6 +11,7 @@
 	import '../styles/Header-Blue.css';
 	//import '../styles/styles.css';
 	import { browser } from '$app/env';
+	import {goto} from '$app/navigation';
 
 
 	let local_data;
@@ -19,17 +20,25 @@
     }
 	getAuth().onAuthStateChanged(function (user) {
 		if (user && user.emailVerified) {
-			$loggedin_user = user;
-
-			if ($local_user_data != null) {
+			if ($local_user_data != "null") {
+				$loggedin_user = user;
 				local_data = JSON.parse($local_user_data);
+			}else{
+				console.log("LOGOUT")
+				if(getAuth().currentUser){
+					logout();
+				}
 			}
 		} else {
+			console.log('not logged in');
+			
 			$loggedin_user = null;
 			if (browser) {
 				$local_user_data = null;
 			}
 		}
+		console.log('loggedin_user', $loggedin_user);
+		console.log('local_data', local_data);
 	});
 
 	function logout() {
@@ -38,11 +47,10 @@
 				// Sign-out successful.
 				console.log('logout successful');
 				console.log($loggedin_user);
-				window.location.href = '/';
+				goto("/");
 			})
 			.catch(function (error) {
 				// An error happened.
-				alert('logout failed');
 			});
 	}
 </script>
@@ -85,6 +93,10 @@
 			>
 			<div class="collapse navbar-collapse" id="navcol-1">
 				<ul class="navbar-nav">
+					{#if $loggedin_user === null || $local_user_data === null}
+					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">Users</a></li>
+					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/">Find Gyms</a></li>
+					{:else if browser}
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">Users</a></li>
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/">Find Gyms</a></li>
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">My Projects</a></li>
@@ -105,7 +117,9 @@
 							><a class="dropdown-item" href="#">Third Item</a>
 						</div>
 					</li>
+					{/if}
 				</ul>
+				
 					<!--This is a spacer for the Login buttons-->
 					<div class="me-auto">
 						

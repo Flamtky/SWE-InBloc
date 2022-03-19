@@ -1,7 +1,7 @@
 <script context="module">
 	import '$lib/firebase.js';
 	import { getAuth, onAuthStateChanged } from 'firebase/auth';
-	import { loggedin_user, local_user_data } from '$lib/stores.js';
+	import { loggedin_user, local_user_data, firstLogin } from '$lib/stores.js';
 	import { browser } from '$app/env';
 	
 
@@ -47,6 +47,7 @@
 	//Here would be the onSnapshot message to gather realtime Data from the database
 	// First fetch should be in the script context="module" tags
 	export let gyms;
+	let img_urls=[];
     let errorMessage = "";
     onAuthStateChanged(getAuth(),async (user) => {
 		if (user) {
@@ -62,30 +63,50 @@
 			let json = await res.json();
 			let data = json.data;
 			let recived_gyms = Object.entries(data.gyms);
-            if(res.ok){
+            if(res.ok && !firstLogin == false){
                 gyms = recived_gyms;
             }else{
                 if(res.status === 403){
                     errorMessage = "Du bist nicht authorisiert";
+					return;
                 }
             }
+			console.log(gyms);
+		gyms.forEach(async gym => {
+			let res = await fetch(`http://localhost:1337/gyms/${gym[0]}/logo`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${token}`
+				}
+			});
+			let json = await res.json();
+			let data = json.data;
+			//TODO retrieve Gym logos and set them as src
+			console.log(json);
+		});
 		}
+		
 	});
 
 </script>
 
+<div class="sbar">
+<form class="me-auto navbar-form" style="display:inline-block; max-width: 20vw; min-width: 180px; margin-top: 1vh;" target="_self" >
+	<div class="d-flex align-items-center">
+		<label class="form-label d-flex mb-0" for="search-field" /><input
+			class="form-control search-field"
+			type="search"
+			id="search-field"
+			name="search"
+			style="filter: blur(0px); margin-left: 0.5vw; margin-right: 0.5vw;"
+			placeholder="Search"
+		/><i class="fa fa-search" />
+	</div>
+</form>
+</div>
 <div class="container">
-	<form class="d-flex me-auto navbar-form" target="_self">
-		<div class="d-flex align-items-center">
-			<label class="form-label d-flex mb-0" for="search-field" /><input
-				class="form-control search-field"
-				type="search"
-				id="search-field"
-				name="search"
-				style="filter: blur(0px);"
-			/><i class="fa fa-search" />
-		</div>
-	</form>
+	
 	{#if gyms != null}
 		{#each gyms as gym}
 			<Card
@@ -96,3 +117,9 @@
 		{/each}
 	{/if}
 </div>
+
+<style>
+	.sbar{
+		text-align: center;
+	}
+</style>
