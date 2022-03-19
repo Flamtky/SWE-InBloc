@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import * as admin from 'firebase-admin';
 import APIException from "../APIException";
-import Wall, { WallFeatures } from "../interfaces/Wall";
+import Wall from "../interfaces/Wall";
 import express from "express";
 import { handleFirebaseError, validateWall, validateWallFeatures } from "../HelperFunctions";
 import { isStaff } from "./gymRoutes";

@@ -3,6 +3,7 @@ import { NextFunction, Request, Response } from "express";
 import User from "./interfaces/User";
 import Gym, { Day, Openings } from "./interfaces/Gym";
 import Wall, { WallFeatures } from "./interfaces/Wall";
+import Route, { RouteFeatures } from "./interfaces/Route";
 
 // Helper functions for the application
 
@@ -240,6 +241,30 @@ export const validateWallFeatures = (features: string[]) => {
     for (const feature of features) {
         // if feature is already used or feature is not valid
         if (usedFeatures.includes(feature) || WallFeatures[feature.toUpperCase() as keyof typeof WallFeatures] == undefined) {
+            return false;
+        }
+        usedFeatures.push(feature);
+    }
+    return true;
+}
+
+export const validateRoute = (route: Route) => {
+    const features = route.features ? (route.features as string).split(',') : [];
+    if (route == undefined || Object.keys(route).length !== 1) {
+        return false;
+    }
+    if (route.features == undefined || features.length < 1) {
+        return false;
+    }
+
+    return validateRouteFeatures(features);
+}
+
+export const validateRouteFeatures = (features: string[]) => {
+    const usedFeatures = [] as string[];
+    for (const feature of features) {
+        // if feature is already used or feature is not valid
+        if (usedFeatures.includes(feature) || RouteFeatures[feature.toUpperCase() as keyof typeof RouteFeatures] == undefined) {
             return false;
         }
         usedFeatures.push(feature);
