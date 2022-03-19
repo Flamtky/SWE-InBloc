@@ -510,7 +510,7 @@ function createLogo(req: Request, res: Response, next: NextFunction, gymId: stri
             cacheControl: 'public, max-age=31536000'
         }
     }).then(() => {
-        getFileLink(gymId, next, res);
+        getFileLink(gymId, next, res, true);
     }).catch((err) => {
         handleFirebaseError(err, res, next, 'Error setting gym logo');
     });
@@ -524,7 +524,7 @@ function deleteLogo(gymId: string, next: NextFunction, res: Response<any, Record
     });
 }
 
-function getFileLink(gymId: string, next: NextFunction, res: Response<any, Record<string, any>>) {
+function getFileLink(gymId: string, next: NextFunction, res: Response<any, Record<string, any>>, created:boolean = false) {
     admin.storage().bucket().file('Gyms/' + gymId + '/logo.jpg').get((err: any, file: any) => {
         if (err) {
             if (err?.errors[0]?.reason === 'notFound') {
@@ -537,7 +537,12 @@ function getFileLink(gymId: string, next: NextFunction, res: Response<any, Recor
                 action: 'read',
                 expires: '03-09-2491'
             }).then((url: string) => {
-                res.status(200).json({ data: { logo: url[0] } });
+                if (created) {
+                    res.setHeader('Location', url[0]);
+                    res.status(201).json({ data: { logo: url[0] } });
+                } else {
+                    res.status(200).json({ data: { logo: url[0] } });
+                }
             });
         }
     });
