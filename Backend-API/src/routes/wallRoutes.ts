@@ -411,4 +411,5 @@ router.delete('/:wallId/image', (req: Request, res: Response, next: NextFunction
     next(new APIException(405, 'Method not allowed'));
 });
 
+//TODO: add difficulty routes and colors
 export default router;

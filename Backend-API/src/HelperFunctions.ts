@@ -4,6 +4,7 @@ import User from "./interfaces/User";
 import Gym, { Day, Openings } from "./interfaces/Gym";
 import Wall, { WallFeatures } from "./interfaces/Wall";
 import Route, { RouteFeatures } from "./interfaces/Route";
+import Comment from "./interfaces/Comment";
 
 // Helper functions for the application
 
@@ -271,3 +272,13 @@ export const validateRouteFeatures = (features: string[]) => {
     }
     return true;
 }
+
+export const validateComment = (comment: Comment): boolean => {
+    if (comment == null) {
+        return false;
+    }
+    if (comment.message == null && comment.image == null) {
+        return false;
+    }
+    return true;
+};

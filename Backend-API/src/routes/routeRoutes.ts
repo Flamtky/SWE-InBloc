@@ -3,8 +3,9 @@ import * as admin from 'firebase-admin';
 import APIException from "../APIException";
 import Route from "../interfaces/Route";
 import express from "express";
-import { handleFirebaseError, validateRoute, validateRouteFeatures, validateWall, validateWallFeatures } from "../HelperFunctions";
+import { handleFirebaseError, validateComment, validateRoute, validateRouteFeatures, validateWall, validateWallFeatures } from "../HelperFunctions";
 import { isStaff } from "./gymRoutes";
+import Comment from "../interfaces/Comment";
 
 const router = express.Router();
 
@@ -150,7 +151,7 @@ router.post('/:routeId', (req: Request, res: Response, next: NextFunction) => {
                 if (snapshotGym.val() === null) {
                     return res.status(404).json({ error: 'Gym not found' });
                 } else {
-                    admin.database().ref('/walls/' + wallId).once('value', (snapshotWall: any) => {
+                    admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
                         if (snapshotWall.val() === null) {
                             return res.status(404).json({ error: 'Wall not found' });
                         } else {
@@ -168,7 +169,7 @@ router.post('/:routeId', (req: Request, res: Response, next: NextFunction) => {
                 handleFirebaseError(error, res, next, 'Error getting gym');
             });
         } else {
-            return res.status(403).json({ error: 'Not authorized' });
+            return res.status(403).json({ error: 'Not authorized to create route' });
         }
     }, (error: any) => {
         handleFirebaseError(error, res, next, 'Error checking if user is staff');
@@ -194,7 +195,7 @@ router.patch('/:routeId/feature', (req: Request, res: Response, next: NextFuncti
                 if (snapshotGym.val() === null) {
                     return res.status(404).json({ error: 'Gym not found' });
                 } else {
-                    admin.database().ref('/walls/' + wallId).once('value', (snapshotWall: any) => {
+                    admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
                         if (snapshotWall.val() === null) {
                             return res.status(404).json({ error: 'Wall not found' });
                         } else {
@@ -220,7 +221,7 @@ router.patch('/:routeId/feature', (req: Request, res: Response, next: NextFuncti
                 handleFirebaseError(error, res, next, 'Error getting gym');
             });
         } else {
-            return res.status(403).json({ error: 'Not authorized' });
+            return res.status(403).json({ error: 'Not authorized to update features' });
         }
     }, (error: any) => {
         handleFirebaseError(error, res, next, 'Error checking if user is staff');
@@ -247,7 +248,7 @@ router.delete('/:routeId', (req: Request, res: Response, next: NextFunction) => 
                 if (snapshotGym.val() === null) {
                     return res.status(404).json({ error: 'Gym not found' });
                 } else {
-                    admin.database().ref('/walls/' + wallId).once('value', (snapshotWall: any) => {
+                    admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
                         if (snapshotWall.val() === null) {
                             return res.status(404).json({ error: 'Wall not found' });
                         } else {
@@ -273,7 +274,7 @@ router.delete('/:routeId', (req: Request, res: Response, next: NextFunction) => 
                 handleFirebaseError(error, res, next, 'Error getting gym');
             });
         } else {
-            return res.status(403).json({ error: 'Not authorized' });
+            return res.status(403).json({ error: 'Not authorized to delete route' });
         }
     }, (error: any) => {
         handleFirebaseError(error, res, next, 'Error checking if user is staff');
@@ -282,4 +283,168 @@ router.delete('/:routeId', (req: Request, res: Response, next: NextFunction) => 
     next(new APIException(405, 'Method not allowed'));
 });
 
+// Get comments for route
+router.get('/:routeId/comments', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+    admin.database().ref('/gyms/' + gymId).once('value', (snapshotGym: any) => {
+        if (snapshotGym.val() === null) {
+            return res.status(404).json({ error: 'Gym not found' });
+        } else {
+            admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
+                if (snapshotWall.val() === null) {
+                    return res.status(404).json({ error: 'Wall not found' });
+                } else {
+                    admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).once('value', (snapshot: any) => {
+                        if (snapshot.val() === null) {
+                            return res.status(404).json({ error: 'Route not found' });
+                        } else {
+                            admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId).once('value', (snapshotComments: any) => {
+                                if (snapshotComments.val() === null) {
+                                    return res.status(404).json({ error: 'No comments found' });
+                                } else {
+                                    res.status(200).json({ data: { comments: snapshotComments.val() } });
+                                }
+                            }, (error: any) => {
+                                handleFirebaseError(error, res, next, 'Error getting comments');
+                            });
+                        }
+                    }, (error: any) => {
+                        handleFirebaseError(error, res, next, 'Error getting route');
+                    });
+                }
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting wall');
+            });
+        }
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting gym');
+    });
+});
+
+// Set comment for route
+router.post('/:routeId/comments', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const currentUser = req.headers.uid as string;
+    const comment: Comment = req.body.comment;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+    if (!validateComment(comment)) {
+        return res.status(400).json({ error: 'Invalid comment' });
+    }
+    // set comment timestamp to current time
+    comment.timestamp = String(Date.now());
+    // If user send image, save it to storage
+    if (comment.image) {
+        if (!comment.image.startsWith('data:image/jpeg;base64,')) {
+            return res.status(400).json({ error: 'Invalid image' });
+        } else {
+            const imageData = comment.image.replace(/^data:image\/jpeg;base64,/, '');
+            const fileName = 'Reviews/' + gymId + "/Walls/" + wallId + "/" + routeId + "/" + currentUser + ".jpg";
+            const imageBuffer = Buffer.from(imageData, 'base64');
+            // max image size is 2MB
+            if (imageBuffer.length > 2000000) {
+                return next(new APIException(413, 'Image is too big'));
+            }
+            admin.storage().bucket().file(fileName).save(imageBuffer, {
+                metadata: {
+                    contentType: 'image/jpeg',
+                    public: true,
+                    cacheControl: 'public, max-age=31536000'
+                }
+            }).then(() => {
+                admin.storage().bucket().file(fileName).getSignedUrl({
+                    action: 'read',
+                    expires: '03-09-2491'
+                }).then((url: string[]) => {
+                    comment.image = url[0];
+                    saveComment(gymId, wallId, routeId, currentUser, comment, res, next);
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error getting image url');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error saving image');
+            });
+        }
+    } else {
+        saveComment(gymId, wallId, routeId, currentUser, comment, res, next);
+    }
+});
+
+// Delete comment for route
+router.delete('/:routeId/comments/:commentId', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const commentId = req.params.commentId;
+    const currentUser = req.headers.uid as string;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+
+    isStaff(gymId, currentUser).then((isStaffBoolean: boolean) => {
+        if (!isStaffBoolean && !req.headers.admin && currentUser !== commentId) {
+            return res.status(403).json({ error: 'Not authorized to delete comment' });
+        }
+
+        admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                return res.status(404).json({ error: 'Comment not found' });
+            } else {
+                if (snapshot.val().image) {
+                    admin.storage().bucket().file("Reviews/" + gymId + "/Walls/" + wallId + "/" + routeId + "/" + commentId + ".jpg").delete().then(() => {
+                        admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
+                            res.status(200).json({ data: { commentId: commentId } });
+                        }, (error: any) => {
+                            handleFirebaseError(error, res, next, 'Error deleting comment');
+                        });
+                    }, (error: any) => {
+                        handleFirebaseError(error, res, next, 'Error deleting image');
+                    });
+                } else {
+                    admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
+                        res.status(200).json({ data: { comment: null } });
+                    }, (error: any) => {
+                        handleFirebaseError(error, res, next, 'Error deleting comment');
+                    });
+                }
+            }
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting comment');
+        });
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting gym');
+    });
+}).all('/:routeId/comments', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
+
 export default router;
+
+const saveComment = (gymId: string, wallId: string, routeId: string, currentUser: string, comment: Comment, res: Response, next: NextFunction) => {
+    admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(comment).then(() => {
+        res.status(200).json({ data: { comment } });
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error saving comment');
+    });
+};
