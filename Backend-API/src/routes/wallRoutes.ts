@@ -220,7 +220,6 @@ router.patch('/:wallId/feature', (req: Request, res: Response, next: NextFunctio
     next(new APIException(405, 'Method not allowed'));
 });
 
-// TODO: add to docs
 // Delete wall
 router.delete('/:wallId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
@@ -240,7 +239,7 @@ router.delete('/:wallId', (req: Request, res: Response, next: NextFunction) => {
                             return res.status(404).json({ error: 'Wall not found' });
                         } else {
                             admin.database().ref('/walls/' + gymId + "/" + wallId).remove().then(() => {
-                                res.status(200).json({ data: { wall: snapshotWall.val() } });
+                                res.status(200).json({ data: { wall: null } });
                             }).catch((error: any) => {
                                 handleFirebaseError(error, res, next, 'Error deleting wall');
                             });
@@ -322,34 +321,40 @@ router.post('/:wallId/image', (req: Request, res: Response, next: NextFunction) 
             const imageData = image.replace(/^data:image\/jpeg;base64,/, '');
             const fileName = 'Gyms/' + gymId + "/Walls/" + wallId + ".jpg";
             const imageBuffer = Buffer.from(imageData, 'base64');
+            // max image size is 2MB
             if (imageBuffer.length > 2000000) {
                 return next(new APIException(413, 'Image is too big'));
             }
-            admin.storage().bucket().file(fileName).save(imageBuffer, {
-                metadata: {
-                    contentType: 'image/jpeg',
-                    public: true,
-                    cacheControl: 'public, max-age=31536000'
-                }
-            }).then(() => {
-                admin.storage().bucket().file(fileName).get((err: any, file: any) => {
-                    if (err) {
-                        if (err?.errors[0]?.reason) {
-                            next(new APIException(404, 'Wall image not found'));
-                        } else {
-                            handleFirebaseError(err, res, next, 'Error getting wall image');
+            admin.database().ref('/gyms/' + gymId).once('value', (snapshotGym: any) => {
+                if (snapshotGym.val() === null) {
+                    return res.status(404).json({ error: 'Gym not found' });
+                } else {
+                    admin.storage().bucket().file(fileName).save(imageBuffer, {
+                        metadata: {
+                            contentType: 'image/jpeg',
+                            public: true,
+                            cacheControl: 'public, max-age=31536000'
                         }
-                    } else {
-                        file.getSignedUrl({
-                            action: 'read',
-                            expires: '03-09-2491'
-                        }).then((url: string) => {
-                            res.status(200).json({ data: { image: url[0] } });
+                    }).then(() => {
+                        admin.storage().bucket().file(fileName).get((err: any, file: any) => {
+                            if (err) {
+                                handleFirebaseError(err, res, next, 'Error getting wall image');
+                            } else {
+                                file.getSignedUrl({
+                                    action: 'read',
+                                    expires: '03-09-2491'
+                                }).then((url: string) => {
+                                    res.setHeader('Location', url[0]);
+                                    res.status(201).json({ data: { image: url[0] } });
+                                });
+                            }
                         });
-                    }
-                });
-            }).catch((error: any) => {
-                handleFirebaseError(error, res, next, 'Error setting wall image');
+                    }).catch((error: any) => {
+                        handleFirebaseError(error, res, next, 'Error setting wall image');
+                    });
+                }
+            }).catch((err) => {
+                handleFirebaseError(err, res, next, 'Error getting gym');
             });
         } else {
             return res.status(403).json({ error: 'Not authorised to set wall image' });
