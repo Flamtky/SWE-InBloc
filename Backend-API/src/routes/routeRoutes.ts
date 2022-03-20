@@ -413,7 +413,7 @@ router.delete('/:routeId/comments/:commentId', (req: Request, res: Response, nex
                 if (snapshot.val().image) {
                     admin.storage().bucket().file("Reviews/" + gymId + "/Walls/" + wallId + "/" + routeId + "/" + commentId + ".jpg").delete().then(() => {
                         admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
-                            res.status(200).json({ data: { commentId: commentId } });
+                            res.status(200).json({ data: { commentId } });
                         }, (error: any) => {
                             handleFirebaseError(error, res, next, 'Error deleting comment');
                         });
@@ -438,6 +438,91 @@ router.delete('/:routeId/comments/:commentId', (req: Request, res: Response, nex
     next(new APIException(405, 'Method not allowed'));
 });
 
+// Update user difficulty to route
+router.post('/:routeId/userRatings', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const currentUser = req.headers.uid as string;
+    const userRating: number = Number(req.body.userRating);
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+    // Valid user rating : -2, -1, 0, 1, 2
+    if (isNaN(userRating) || userRating < -2 || userRating > 2) {
+        return res.status(400).json({ error: 'Invalid user rating' });
+    }
+
+    gymExists(gymId).then((gymExistsBool: boolean) => {
+        if (!gymExistsBool) {
+            return res.status(404).json({ error: 'Gym not found' });
+        }
+        wallExists(gymId, wallId).then((wallExistsBool: boolean) => {
+            if (!wallExistsBool) {
+                return res.status(404).json({ error: 'Wall not found' });
+            }
+            routeExists(gymId, wallId, routeId, true).then((routeExistsBool: any[]) => {
+                if (!(routeExistsBool[0] as boolean)) {
+                    return res.status(404).json({ error: 'Route not found' });
+                }
+                admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(userRating).then(() => {
+                    const oldValue = (routeExistsBool[1]?.userRatings || 0) as number;
+                    setUserRating(gymId, wallId, routeId, userRating - oldValue).then(() => {
+                        res.status(200).json({ data: { userRating } });
+                    }).catch((error: any) => {
+                        handleFirebaseError(error, res, next, 'Error updating user rating');
+                    });
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error saving user rating');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting route');
+            });
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting wall');
+        });
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting gym');
+    });
+});
+
+// Delete user difficulty to route
+router.delete('/:routeId/userRatings', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const currentUser = req.headers.uid as string;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+
+    admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).once('value', (snapshot: any) => {
+        if (snapshot.val() === null) {
+            return res.status(404).json({ error: 'User rating not found' });
+        } else {
+            admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).remove().then(() => {
+                setUserRating(gymId, wallId, routeId, snapshot.val() || 0).then(() => {
+                    res.status(200).json({ data: { userRating: null } });
+                }).catch((error: any) => {
+                    handleFirebaseError(error, res, next, 'Error updating user rating');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error deleting user rating');
+            });
+        }
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting user rating');
+    });
+}).all('/:routeId/userRatings', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
 
 export default router;
 
@@ -448,3 +533,65 @@ const saveComment = (gymId: string, wallId: string, routeId: string, currentUser
         handleFirebaseError(error, res, next, 'Error saving comment');
     });
 };
+
+const gymExists = (gymId: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/gyms/' + gymId).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
+
+const wallExists = (gymId: string, wallId: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/walls/' + gymId + '/' + wallId).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+}
+
+const routeExists = (gymId: string, wallId: string, routeId: string, getRoute:boolean = false): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                resolve([false]);
+            } else {
+                resolve([true, getRoute ? snapshot.val() as Route : null]);
+            }
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+}
+
+const setUserRating = (gymId: string, wallId: string, routeId: string, amount: number): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/userRatings').transaction((currentValue: number) => {
+            if (currentValue === null) {
+                return amount;
+            } else {
+                return currentValue + amount;
+            }
+        }, (error: any, committed: boolean, snapshot: any) => {
+            if (error) {
+                reject(error);
+            } else if (!committed) {
+                reject('Rating not committed');
+            } else {
+                resolve();
+            }
+        });
+    });
+}
