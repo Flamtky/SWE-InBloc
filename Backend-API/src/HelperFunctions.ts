@@ -3,6 +3,8 @@ import { NextFunction, Request, Response } from "express";
 import User from "./interfaces/User";
 import Gym, { Day, Openings } from "./interfaces/Gym";
 import Wall, { WallFeatures } from "./interfaces/Wall";
+import Route, { RouteFeatures } from "./interfaces/Route";
+import Comment from "./interfaces/Comment";
 
 // Helper functions for the application
 
@@ -80,8 +82,7 @@ export const validateGym = (gym: Gym, undefinedEmailIsValid: boolean = false): b
     if (gym == undefined || Object.keys(gym).length === 0) {
         return false;
     }
-    console.log(gym);
-    console.log(gym.name, gym.name?.length < 1 , gym.name?.length > 32);
+
     if (gym.name === null || gym.name?.length < 1 || gym.name?.length > 32) {
         return false;
     }
@@ -243,6 +244,84 @@ export const validateWallFeatures = (features: string[]) => {
             return false;
         }
         usedFeatures.push(feature);
+    }
+    return true;
+}
+
+export const validateRoute = (route: Route, difficulties:string[]) => {
+    const features = route.features ? (route.features as string).split(',') : [];
+    const difficulty = route.difficulty || null;
+    if (route == undefined || Object.keys(route).length !== 1) {
+        return false;
+    }
+    if (route.features == undefined || features.length < 1) {
+        return false;
+    }
+    if (difficulty == null || !validateDifficulty(difficulty,  difficulties)) {
+        return false;
+    }
+
+    return validateRouteFeatures(features);
+}
+
+export const validateRouteFeatures = (features: string[]) => {
+    const usedFeatures = [] as string[];
+    for (const feature of features) {
+        // if feature is already used or feature is not valid
+        if (usedFeatures.includes(feature) || RouteFeatures[feature.toUpperCase() as keyof typeof RouteFeatures] == undefined) {
+            return false;
+        }
+        usedFeatures.push(feature);
+    }
+    return true;
+}
+
+export const validateComment = (comment: Comment): boolean => {
+    if (comment == null) {
+        return false;
+    }
+    if (comment.message == null && comment.image == null) {
+        return false;
+    }
+    return true;
+};
+
+export const validateDifficulties = (difficulty: any) => {
+    if (difficulty == undefined || Object.keys(difficulty).length < 1) {
+        return false;
+    }
+    const counter = []; // key should be assending
+    for (const key in difficulty) {
+        let val = difficulty[key] as string; // Should be hex color string
+
+        if (typeof val !== 'string' || val.length === 6) { // if '#' is missing for hex color string, add it
+            difficulty[key] = "#" + val;
+            val = difficulty[key] as string;
+        }
+
+        if (isNaN(parseInt(key)) || typeof val !== 'string' || val.length !== 7 || !val.match(/^#[0-9a-fA-F]{6}$/)) {
+            return false;
+        }
+        counter.push(parseInt(key));
+    }
+    counter.sort((a, b) => a - b); // sort counter ascending
+    for (let i = 0; i < counter.length; i++) { // check if keys are assending
+        if (counter[i] !== i) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export const validateDifficulty = (difficulty: number, difficulties:string[]) => {
+    if (difficulty == undefined) {
+        return false;
+    }
+    if (difficulties == undefined || difficulties.length < 1) {
+        return false;
+    }
+    if (difficulty < 0 || difficulty > difficulties.length - 1) {
+        return false;
     }
     return true;
 }
