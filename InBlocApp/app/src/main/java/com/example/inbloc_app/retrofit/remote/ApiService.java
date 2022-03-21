@@ -1,6 +1,7 @@
 package com.example.inbloc_app.retrofit.remote;
 
 import com.example.inbloc_app.retrofit.models.Gyms;
+import com.example.inbloc_app.retrofit.models.Walls;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -12,7 +13,16 @@ import java.util.List;
 public interface ApiService {
 
     @GET("/gyms")
-    Call<List<Gyms>> getGyms();
+    Call<List<Gyms>> getAllGyms();
+
+    @GET("/gyms/")
+    Call<Gyms> getSpecificGym();
+
+    @GET("/walls")
+    Call<List<Walls>> getWalls();
+
+    @GET("/walls")
+    Call<Walls> getSpecificWall();
 
 
 }
