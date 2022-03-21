@@ -13,5 +13,5 @@ export enum RouteFeatures {
 // Route Interface
 export default interface Route {
     features?: string;
-    difficulty?: string;
+    difficulty?: number;
 }

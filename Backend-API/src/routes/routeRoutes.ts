@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import APIException from "../APIException";
 import Route from "../interfaces/Route";
 import express from "express";
-import { handleFirebaseError, validateComment, validateRoute, validateRouteFeatures, validateWall, validateWallFeatures } from "../HelperFunctions";
+import { handleFirebaseError, validateComment, validateDifficulty, validateRoute, validateRouteFeatures, validateWall, validateWallFeatures } from "../HelperFunctions";
 import { isStaff } from "./gymRoutes";
 import Comment from "../interfaces/Comment";
 
@@ -62,7 +62,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
             if (snapshot.val() === null) {
                 return res.status(404).json({ error: 'Gym not found' });
             } else {
-                admin.database().ref('/walls/' + wallId).once('value').then((wallSnapshot) => {
+                admin.database().ref('/walls/' + gymId + "/" + wallId).once('value').then((wallSnapshot) => {
                     if (wallSnapshot.val() === null) {
                         return res.status(404).json({ error: 'Wall not found' });
                     } else {
@@ -105,7 +105,7 @@ router.get('/:routeId', (req: Request, res: Response, next: NextFunction) => {
         if (snapshotGym.val() === null) {
             return res.status(404).json({ error: 'Gym not found' });
         } else {
-            admin.database().ref('/walls/' + wallId).once('value', (snapshotWall: any) => {
+            admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
                 if (snapshotWall.val() === null) {
                     return res.status(404).json({ error: 'Wall not found' });
                 } else {
@@ -135,9 +135,6 @@ router.post('/:routeId', (req: Request, res: Response, next: NextFunction) => {
     const wallId = req.query.wallId ? String(req.query.wallId) : null;
     const routeId = req.params.routeId;
     const currentUser = req.headers.uid as string;
-    if (!validateRoute(route)) {
-        return res.status(400).json({ error: 'Invalid route' });
-    }
     if (gymId === null) {
         return res.status(400).json({ error: 'Invalid gymId' });
     }
@@ -151,18 +148,30 @@ router.post('/:routeId', (req: Request, res: Response, next: NextFunction) => {
                 if (snapshotGym.val() === null) {
                     return res.status(404).json({ error: 'Gym not found' });
                 } else {
-                    admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
-                        if (snapshotWall.val() === null) {
-                            return res.status(404).json({ error: 'Wall not found' });
+                    // Get gym difficulties
+                    admin.database().ref('/difficulties/' + gymId).once('value', (snapshotDifficulties: any) => {
+                        if (snapshotDifficulties.val() === null) {
+                            return res.status(404).json({ error: 'No difficulties found' });
                         } else {
-                            admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).set(route).then(() => {
-                                res.status(201).json({ data: { route } });
+                            if (!validateRoute(route, snapshotDifficulties.val() as string[])) {
+                                return res.status(400).json({ error: 'Invalid route' });
+                            }
+                            admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
+                                if (snapshotWall.val() === null) {
+                                    return res.status(404).json({ error: 'Wall not found' });
+                                } else {
+                                    admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).set(route).then(() => {
+                                        res.status(201).json({ data: { route } });
+                                    }, (error: any) => {
+                                        handleFirebaseError(error, res, next, 'Error creating route');
+                                    });
+                                }
                             }, (error: any) => {
-                                handleFirebaseError(error, res, next, 'Error creating route');
+                                handleFirebaseError(error, res, next, 'Error getting wall');
                             });
                         }
                     }, (error: any) => {
-                        handleFirebaseError(error, res, next, 'Error getting wall');
+                        handleFirebaseError(error, res, next, 'Error getting difficulties');
                     });
                 }
             }, (error: any) => {
@@ -203,8 +212,13 @@ router.patch('/:routeId/feature', (req: Request, res: Response, next: NextFuncti
                                 if (snapshot.val() === null) {
                                     return res.status(404).json({ error: 'Route not found' });
                                 } else {
-                                    admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/features').update({ features: newFeatures }).then(() => {
-                                        res.status(200).json({ data: { route: snapshot.val() } });
+                                    admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).update({ features: newFeatures }).then(() => {
+                                        const oldData = snapshot.val();
+                                        const newData = {
+                                            ...oldData,
+                                            features: newFeatures
+                                        };
+                                        res.status(200).json({ data: { route: newData } });
                                     }, (error: any) => {
                                         handleFirebaseError(error, res, next, 'Error updating features');
                                     });
@@ -229,6 +243,81 @@ router.patch('/:routeId/feature', (req: Request, res: Response, next: NextFuncti
 }).all('/:routeId/feature', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
+
+// Update difficulty for given route
+router.patch('/:routeId/difficulty', (req: Request, res: Response, next: NextFunction) => {
+    const newDifficulty: number = req.body.difficulty as number;
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const currentUser = req.headers.uid as string;
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+    if (routeId === null) {
+        return res.status(400).json({ error: 'Invalid routeId' });
+    }
+    isStaff(gymId, currentUser).then((isStaffBool: boolean) => {
+        if (isStaffBool || req.headers.admin) {
+            admin.database().ref('/gyms/' + gymId).once('value', (snapshotGym: any) => {
+                if (snapshotGym.val() === null) {
+                    return res.status(404).json({ error: 'Gym not found' });
+                } else {
+                    // Get difficulties
+                    admin.database().ref('/difficulties/' + gymId).once('value', (snapshotDifficulties: any) => {
+                        if (snapshotDifficulties.val() === null) {
+                            return res.status(404).json({ error: 'Difficulties not found' });
+                        } else {
+                            if (!validateDifficulty(newDifficulty, snapshotDifficulties.val() as string[])) {
+                                return res.status(400).json({ error: 'Invalid difficulty' });
+                            }
+                            admin.database().ref('/walls/' + gymId + "/" + wallId).once('value', (snapshotWall: any) => {
+                                if (snapshotWall.val() === null) {
+                                    return res.status(404).json({ error: 'Wall not found' });
+                                } else {
+                                    admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).once('value', (snapshot: any) => {
+                                        if (snapshot.val() === null) {
+                                            return res.status(404).json({ error: 'Route not found' });
+                                        } else {
+                                            admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).update({ difficulty: newDifficulty }).then(() => {
+                                                const oldData = snapshot.val();
+                                                const newData = {
+                                                    ...oldData,
+                                                    difficulty: newDifficulty
+                                                };
+                                                res.status(200).json({ data: { route: newData } });
+                                            }, (error: any) => {
+                                                handleFirebaseError(error, res, next, 'Error updating difficulty');
+                                            });
+                                        }
+                                    }, (error: any) => {
+                                        handleFirebaseError(error, res, next, 'Error getting route');
+                                    });
+                                }
+                            }, (error: any) => {
+                                handleFirebaseError(error, res, next, 'Error getting wall');
+                            });
+                        }
+                    }, (error: any) => {
+                        handleFirebaseError(error, res, next, 'Error getting difficulties');
+                    });
+                }
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting gym');
+            });
+        } else {
+            return res.status(403).json({ error: 'Not authorized to update difficulty' });
+        }
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error checking if user is staff');
+    });
+}).all('/:routeId/difficulty', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
 
 // Delete route
 router.delete('/:routeId', (req: Request, res: Response, next: NextFunction) => {
@@ -562,7 +651,7 @@ const wallExists = (gymId: string, wallId: string): Promise<boolean> => {
     });
 }
 
-const routeExists = (gymId: string, wallId: string, routeId: string, getRoute:boolean = false): Promise<any[]> => {
+const routeExists = (gymId: string, wallId: string, routeId: string, getRoute: boolean = false): Promise<any[]> => {
     return new Promise((resolve, reject) => {
         admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).once('value', (snapshot: any) => {
             if (snapshot.val() === null) {

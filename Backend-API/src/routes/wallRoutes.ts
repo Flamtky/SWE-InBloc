@@ -153,7 +153,12 @@ router.patch('/:wallId/setDate', (req: Request, res: Response, next: NextFunctio
                             return res.status(404).json({ error: 'Wall not found' });
                         } else {
                             admin.database().ref('/walls/' + gymId + "/" + wallId).update({ setDate: newSetDate }).then(() => {
-                                res.status(200).json({ data: { wall: snapshotWall.val() } });
+                                const oldData = snapshotWall.val();
+                                const newData = {
+                                    ...oldData,
+                                    setDate: newSetDate
+                                };
+                                res.status(200).json({ data: { wall: newData } });
                             }).catch((error: any) => {
                                 handleFirebaseError(error, res, next, 'Error updating wall');
                             });
@@ -198,7 +203,12 @@ router.patch('/:wallId/feature', (req: Request, res: Response, next: NextFunctio
                             return res.status(404).json({ error: 'Wall not found' });
                         } else {
                             admin.database().ref('/walls/' + gymId + "/" + wallId).update({ feature: newFeatures }).then(() => {
-                                res.status(200).json({ data: { wall: snapshotWall.val() } });
+                                const oldData = snapshotWall.val();
+                                const newData = {
+                                    ...oldData,
+                                    feature: newFeatures
+                                };
+                                res.status(200).json({ data: { wall: newData } });
                             }).catch((error: any) => {
                                 handleFirebaseError(error, res, next, 'Error updating wall');
                             });
@@ -411,5 +421,4 @@ router.delete('/:wallId/image', (req: Request, res: Response, next: NextFunction
     next(new APIException(405, 'Method not allowed'));
 });
 
-// TODO: add difficulty routes and colors
 export default router;

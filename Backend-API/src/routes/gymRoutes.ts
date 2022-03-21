@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import APIException from "../APIException";
 import Gym, { Day, Openings } from "../interfaces/Gym";
 import express from "express";
-import { handleFirebaseError, steriliseDayFromInterface, steriliseGym, steriliseOpenings, validateDate, validateDay, validateDayFromInterface, validateGym, validateOpenings } from "../HelperFunctions";
+import { handleFirebaseError, steriliseDayFromInterface, steriliseGym, steriliseOpenings, validateDate, validateDay, validateDayFromInterface, validateDifficulties, validateGym, validateOpenings } from "../HelperFunctions";
 
 const router = express.Router();
 
@@ -321,6 +321,70 @@ router.delete('/:gymId/holidays', (req: Request, res: Response, next: NextFuncti
     next(new APIException(405, 'Method not allowed'));
 });
 
+// Get difficulties for gym by gymId
+router.get('/:gymId/difficulties', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    getDifficultiesFromGymId(gymId, next, res);
+});
+
+// Set difficulties for gym by gymId
+router.post('/:gymId/difficulties', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const difficulties: any = req.body;
+    if (!validateDifficulties(difficulties)) {
+        return next(new APIException(400, 'Invalid difficulties'));
+    }
+    const currentUser = req.headers.uid as string;
+    // if gym doesn't exist, return 404
+    admin.database().ref('/gyms/' + gymId).once('value').then((snapshot) => {
+        if (snapshot.val() === null) {
+            next(new APIException(404, 'Gym not found'));
+        } else {
+            if (!req.headers.admin) {
+                isGymOwner(gymId, currentUser).then((isOwner) => {
+                    if (isOwner) {
+                        setDifficultiesByGymId(gymId, difficulties, res, next);
+                    } else {
+                        next(new APIException(403, 'Not authorised to set difficulties for this gym'));
+                    }
+                });
+            } else {
+                setDifficultiesByGymId(gymId, difficulties, res, next);
+            }
+        }
+    }).catch((err) => {
+        handleFirebaseError(err, res, next, 'Error getting gym');
+    });
+});
+
+// Delete difficulties for gym by gymId
+router.delete('/:gymId/difficulties', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.params.gymId;
+    const currentUser = req.headers.uid as string;
+    // if gym doesn't exist, return 404
+    admin.database().ref('/gyms/' + gymId).once('value').then((snapshot) => {
+        if (snapshot.val() === null) {
+            next(new APIException(404, 'Gym not found'));
+        } else {
+            if (!req.headers.admin) {
+                isGymOwner(gymId, currentUser).then((isOwner) => {
+                    if (isOwner) {
+                        deleteDifficultiesByGymId(gymId, res, next);
+                    } else {
+                        next(new APIException(403, 'Not authorised to delete difficulties for this gym'));
+                    }
+                });
+            } else {
+                deleteDifficultiesByGymId(gymId, res, next);
+            }
+        }
+    }).catch((err) => {
+        handleFirebaseError(err, res, next, 'Error getting gym');
+    });
+}).all('/:gymId/difficulties', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
 export default router;
 
 export const isGymOwner = (gymId: string, userId: string): Promise<boolean> => {
@@ -352,6 +416,34 @@ export const isStaff = (gymId: string, userId: string): Promise<boolean> => {
         });
     });
 };
+
+function getDifficultiesFromGymId(gymId: string, next: NextFunction, res: Response) {
+    admin.database().ref('/difficulties/' + gymId).once('value').then((snapshot) => {
+        if (snapshot.val() === null) {
+            next(new APIException(404, 'Gym not found'));
+        } else {
+            res.status(200).json({ data: { [gymId]: snapshot.val() } });
+        }
+    }).catch((err) => {
+        handleFirebaseError(err, res, next, 'Error getting gym');
+    });
+}
+
+function setDifficultiesByGymId(gymId: string, difficulties: any, res: Response, next: NextFunction) {
+    admin.database().ref('/difficulties/' + gymId).set(difficulties).then(() => {
+        res.status(200).json({ data: { [gymId]: difficulties } });
+    }).catch((err) => {
+        handleFirebaseError(err, res, next, 'Error setting difficulties');
+    });
+}
+
+function deleteDifficultiesByGymId(gymId: string, res: Response, next: NextFunction) {
+    admin.database().ref('/difficulties/' + gymId).remove().then(() => {
+        res.status(200).json({ data: { [gymId]: null } });
+    }).catch((err) => {
+        handleFirebaseError(err, res, next, 'Error deleting difficulties');
+    });
+}
 
 function deleteHolidayFromDateByGymId(gymId: string, date: string, res: Response<any, Record<string, any>>, next: NextFunction) {
     admin.database().ref('/overridden-openings/' + gymId + '/' + date).remove().then(() => {
@@ -438,7 +530,12 @@ function updateOpeningFromDayByGymId(gymId: string, next: NextFunction, day: str
         if (snapshot.val() === null) {
             next(new APIException(404, 'Gym not found'));
         } else {
-            admin.database().ref('/openings/' + gymId + '/' + day).update(openingDay).then(() => {
+            admin.database().ref('/openings/' + gymId).update({ [day]: openingDay }).then(() => {
+                const oldData = snapshot.val();
+                const newData = {
+                    ...oldData,
+                    [day]: openingDay
+                }
                 res.status(200).json({ data: { [day]: openingDay } });
             }).catch((err) => {
                 handleFirebaseError(err, res, next, 'Error updating opening');
@@ -553,6 +650,8 @@ function deleteGym(gymId: string, res: Response<any, Record<string, any>>, next:
     admin.database().ref('/openings/' + gymId).remove().then(() => {
         // delete holidays from gym
         admin.database().ref('/overridden-openings/' + gymId).remove().then(() => {
+            // delete gym difficulties from gym
+            admin.database().ref('/difficulties/' + gymId).remove().then(() => {
                 // delete logo from storage
                 admin.storage().bucket().file('Gyms/' + gymId + '/logo.jpg').delete((errLogo: any, file: any) => {
                     if (errLogo) {
@@ -566,11 +665,14 @@ function deleteGym(gymId: string, res: Response<any, Record<string, any>>, next:
                         });
                     }
                 });
-            }).catch((err) => {
-                handleFirebaseError(err, res, next, 'Error deleting gym holidays');
+            }).catch((errDiff) => {
+                handleFirebaseError(errDiff, res, next, 'Error deleting gym difficulties');
             });
-    }).catch((err) => {
-        handleFirebaseError(err, res, next, 'Error deleting gym opening');
+        }).catch((errHoliday) => {
+            handleFirebaseError(errHoliday, res, next, 'Error deleting gym holidays');
+        });
+    }).catch((errOpening) => {
+        handleFirebaseError(errOpening, res, next, 'Error deleting gym openings');
     });
 }
 
