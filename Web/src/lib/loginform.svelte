@@ -79,9 +79,7 @@
 									if (browser) {
 										$local_user_data = JSON.stringify(json.data.user);
 										showLoading = true;
-										setInterval(() => {
-											goto('/');
-										}, 500);
+										goto('/');
 									}
 								}
 							});

@@ -47,7 +47,7 @@
 				// Sign-out successful.
 				console.log('logout successful');
 				console.log($loggedin_user);
-				goto("/");
+				window.location.href = '/';
 			})
 			.catch(function (error) {
 				// An error happened.
