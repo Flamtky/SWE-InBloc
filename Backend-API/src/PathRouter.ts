@@ -2,8 +2,8 @@ import { Router, Express} from 'express';
 import UserRoutes from './routes/userRoutes';
 import StreamRoutes from './routes/streamRoutes';
 import GymRoutes from './routes/gymRoutes';
-import WallRoutes from './routes/WallRoutes';
-import RouteRoutes from './routes/RouteRoutes';
+import WallRoutes from './routes/wallRoutes';
+import RouteRoutes from './routes/routeRoutes';
 // ...
 
 
