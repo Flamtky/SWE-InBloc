@@ -345,10 +345,21 @@ router.delete('/:routeId', (req: Request, res: Response, next: NextFunction) => 
                                 if (snapshot.val() === null) {
                                     return res.status(404).json({ error: 'Route not found' });
                                 } else {
-                                    admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).remove().then(() => {
-                                        res.status(200).json({ data: { route: snapshot.val() } });
+                                    // Remove comments from route
+                                    admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId).remove().then(() => {
+                                        // Remove completed route checks
+                                        admin.database().ref('/completed/' + gymId + '/' + wallId + '/' + routeId).remove().then(() => {
+                                            // Remove route
+                                            admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).remove().then(() => {
+                                                res.status(200).json({ data: { route: snapshot.val() } });
+                                            }, (error: any) => {
+                                                handleFirebaseError(error, res, next, 'Error deleting route');
+                                            });
+                                        }, (error: any) => {
+                                            handleFirebaseError(error, res, next, 'Error deleting completed checks');
+                                        });
                                     }, (error: any) => {
-                                        handleFirebaseError(error, res, next, 'Error deleting route');
+                                        handleFirebaseError(error, res, next, 'Error deleting comments');
                                     });
                                 }
                             }, (error: any) => {
@@ -613,6 +624,139 @@ router.delete('/:routeId/userRatings', (req: Request, res: Response, next: NextF
     next(new APIException(405, 'Method not allowed'));
 });
 
+// Complete route
+router.post('/:routeId/complete', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const flashed = req.query.flashed === 'true';
+    const currentUser = req.headers.uid as string;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+
+    gymExists(gymId).then((gymExistsBool: boolean) => {
+        if (!gymExistsBool) {
+            return res.status(404).json({ error: 'Gym not found' });
+        }
+        wallExists(gymId, wallId).then((wallExistsBool: boolean) => {
+            if (!wallExistsBool) {
+                return res.status(404).json({ error: 'Wall not found' });
+            }
+            routeExists(gymId, wallId, routeId, true).then((routeExistsBool: any[]) => {
+                const oldRoute = routeExistsBool[1] as Route;
+                if (!(routeExistsBool[0] as boolean)) {
+                    return res.status(404).json({ error: 'Route not found' });
+                }
+                hasUserCompletedRoute(gymId, wallId, routeId, currentUser).then((hasCompletedRoute: boolean) => {
+                    if (hasCompletedRoute) {
+                        return res.status(400).json({ error: 'User has already completed this route' });
+                    } else {
+                        setUserCompletedRoute(gymId, wallId, routeId, currentUser, flashed).then(() => {
+                            // Increment user completed route count and routes completed count
+                            incrementUserCompletedRouteCount(currentUser).then(() => {
+                                incrementRoutesCompletedCount(gymId, wallId, routeId).then(() => {
+                                    // Update user completed features
+                                    updateUsersCompletedFeatures(gymId, wallId, routeId, currentUser).then(() => {
+                                        res.status(200).json({ data: { userCompletedRoute: true } });
+                                    }).catch((error: any) => {
+                                        handleFirebaseError(error, res, next, 'Error updating user completed features');
+                                    });
+                                }).catch((error: any) => {
+                                    handleFirebaseError(error, res, next, 'Error incrementing routes completed count');
+                                });
+                            }).catch((error: any) => {
+                                handleFirebaseError(error, res, next, 'Error incrementing user completed route count');
+                            });
+                        }).catch((error: any) => {
+                            handleFirebaseError(error, res, next, 'Error setting user completed route');
+                        });
+                    }
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error checking if user has completed route');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting route');
+            });
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting wall');
+        });
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting gym');
+    });
+});
+
+// Uncomplete route
+router.delete('/:routeId/complete', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const currentUser = req.headers.uid as string;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+
+    gymExists(gymId).then((gymExistsBool: boolean) => {
+        if (!gymExistsBool) {
+            return res.status(404).json({ error: 'Gym not found' });
+        }
+        wallExists(gymId, wallId).then((wallExistsBool: boolean) => {
+            if (!wallExistsBool) {
+                return res.status(404).json({ error: 'Wall not found' });
+            }
+            routeExists(gymId, wallId, routeId, true).then((routeExistsBool: any[]) => {
+                const oldRoute = routeExistsBool[1] as Route;
+                if (!(routeExistsBool[0] as boolean)) {
+                    return res.status(404).json({ error: 'Route not found' });
+                }
+                hasUserCompletedRoute(gymId, wallId, routeId, currentUser).then((hasCompletedRoute: boolean) => {
+                    if (!hasCompletedRoute) {
+                        return res.status(400).json({ error: 'User has not completed this route' });
+                    } else {
+                        deleteUserCompletedRoute(gymId, wallId, routeId, currentUser).then(() => {
+                            // Decrement user completed route count and routes completed count
+                            decrementUserCompletedRouteCount(currentUser).then(() => {
+                                decrementRoutesCompletedCount(gymId, wallId, routeId).then(() => {
+                                    // Update user completed features
+                                    updateUsersCompletedFeatures(gymId, wallId, routeId, currentUser, true).then(() => {
+                                        res.status(200).json({ data: { userCompletedRoute: false } });
+                                    }).catch((error: any) => {
+                                        handleFirebaseError(error, res, next, 'Error updating user completed features');
+                                    });
+                                }).catch((error: any) => {
+                                    handleFirebaseError(error, res, next, 'Error decrementing routes completed count');
+                                });
+                            }).catch((error: any) => {
+                                handleFirebaseError(error, res, next, 'Error decrementing user completed route count');
+                            });
+                        }).catch((error: any) => {
+                            handleFirebaseError(error, res, next, 'Error deleting user completed route');
+                        });
+                    }
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error checking if user has completed route');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting route');
+            });
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting wall');
+        });
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting gym');
+    });
+}).all('/:routeId/complete', (_req: Request, _res: Response, next: NextFunction) => {
+    next(new APIException(405, 'Method not allowed'));
+});
+
 export default router;
 
 const saveComment = (gymId: string, wallId: string, routeId: string, currentUser: string, comment: Comment, res: Response, next: NextFunction) => {
@@ -649,7 +793,7 @@ const wallExists = (gymId: string, wallId: string): Promise<boolean> => {
             reject(error);
         });
     });
-}
+};
 
 const routeExists = (gymId: string, wallId: string, routeId: string, getRoute: boolean = false): Promise<any[]> => {
     return new Promise((resolve, reject) => {
@@ -663,7 +807,7 @@ const routeExists = (gymId: string, wallId: string, routeId: string, getRoute: b
             reject(error);
         });
     });
-}
+};
 
 const setUserRating = (gymId: string, wallId: string, routeId: string, amount: number): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -683,4 +827,211 @@ const setUserRating = (gymId: string, wallId: string, routeId: string, amount: n
             }
         });
     });
-}
+};
+
+const hasUserCompletedRoute = (gymId: string, wallId: string, routeId: string, currentUser: string): Promise<boolean> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/completed/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).once('value', (snapshot: any) => {
+            if (snapshot.val() === null) {
+                resolve(false);
+            } else {
+                resolve(true);
+            }
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
+
+const setUserCompletedRoute = (gymId: string, wallId: string, routeId: string, currentUser: string, flashed: boolean = false): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/completed/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(flashed).then(() => {
+            resolve();
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
+
+const incrementUserCompletedRouteCount = (currentUser: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/users/' + currentUser + '/completedRoutes').transaction((currentValue: number) => {
+            if (currentValue === null) {
+                return 1;
+            } else {
+                return currentValue + 1;
+            }
+        }, (error: any, committed: boolean, snapshot: any) => {
+            if (error) {
+                reject(error);
+            } else if (!committed) {
+                reject('Completed route count not committed');
+            } else {
+                resolve();
+            }
+        });
+    });
+};
+
+const incrementRoutesCompletedCount = (gymId: string, wallId: string, routeId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/completedCount').transaction((currentValue: number) => {
+            if (currentValue === null) {
+                return 1;
+            } else {
+                return currentValue + 1;
+            }
+        }, (error: any, committed: boolean, snapshot: any) => {
+            if (error) {
+                reject(error);
+            } else if (!committed) {
+                reject('Completed count not committed');
+            } else {
+                resolve();
+            }
+        });
+    });
+};
+
+const updateUsersCompletedFeatures = (gymId: string, wallId: string, routeId: string, currentUser: string, revert: boolean = false): Promise<void> => {
+    const oldCompletedFeaturesRef = admin.database().ref('/users/' + currentUser + '/completedFeatures');
+    const wallFeaturesRef = admin.database().ref('/walls/' + gymId + '/' + wallId + '/features');
+    const routeFeaturesRef = admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/features');
+    return new Promise((resolve, reject) => {
+        oldCompletedFeaturesRef.once('value', (oldFeaturesSnapshot: any) => {
+            const oldFeatures: object = oldFeaturesSnapshot.val() || {};
+            wallFeaturesRef.once('value', (wallFeaturesSnapshot: any) => {
+                const wallFeatures: string[] = (wallFeaturesSnapshot.val() as string).split(",") || [];
+                routeFeaturesRef.once('value', (routeFeaturesSnapshot: any) => {
+                    const routeFeatures: string[] = (routeFeaturesSnapshot.val() as string).split(",") || [];
+                    if (wallFeatures && routeFeatures) {
+                        const newFeatures: any = buildNewUserFeatures(oldFeatures, wallFeatures, routeFeatures, revert);
+                        setNewUserAvgDifficulty(gymId, wallId, routeId, currentUser, revert).then(() => {
+
+                            admin.database().ref('/users/' + currentUser + '/completedFeatures').set(newFeatures).then(() => {
+                                resolve();
+                            }, (error: any) => {
+                                reject(error);
+                            });
+                        }, (error: any) => {
+                            reject(error);
+                        });
+                    } else {
+                        reject('Features not found');
+                    }
+                }, (error: any) => {
+                    reject(error);
+                });
+            }, (error: any) => {
+                reject(error);
+            });
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
+
+const buildNewUserFeatures = (oldFeatures: any, wallFeatures: string[], routeFeatures: string[], revert: boolean = false): any => {
+    for (const wallFeature of wallFeatures) {
+        if (!revert) {
+            oldFeatures[wallFeature] = oldFeatures[wallFeature] + 1 || 1;
+        } else {
+            oldFeatures[wallFeature] = oldFeatures[wallFeature] - 1 || 0;
+        }
+
+    }
+    for (const routeFeature of routeFeatures) {
+        if (!revert) {
+            oldFeatures[routeFeature] = oldFeatures[routeFeature] + 1 || 1;
+        } else {
+            oldFeatures[routeFeature] = oldFeatures[routeFeature] - 1 || 0;
+        }
+    }
+
+    return oldFeatures;
+};
+
+const deleteUserCompletedRoute = (gymId: string, wallId: string, routeId: string, currentUser: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/completed/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).remove().then(() => {
+            resolve();
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
+
+const decrementUserCompletedRouteCount = (currentUser: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/users/' + currentUser + '/completedRoutes').transaction((currentValue: number) => {
+            if (currentValue === null) {
+                return 0;
+            } else {
+                return currentValue - 1;
+            }
+        }, (error: any, committed: boolean, snapshot: any) => {
+            if (error) {
+                reject(error);
+            } else if (!committed) {
+                reject('Completed route count not committed');
+            } else {
+                resolve();
+            }
+        });
+    });
+};
+
+const decrementRoutesCompletedCount = (gymId: string, wallId: string, routeId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/completedCount').transaction((currentValue: number) => {
+            if (currentValue === null) {
+                return 0;
+            } else {
+                return currentValue - 1;
+            }
+        }, (error: any, committed: boolean, snapshot: any) => {
+            if (error) {
+                reject(error);
+            } else if (!committed) {
+                reject('Completed count not committed');
+            } else {
+                resolve();
+            }
+        });
+    });
+};
+
+const setNewUserAvgDifficulty = (gymId: string, wallId: string, routeId: string, currentUser: string, revert: boolean = false): Promise<void> => {
+    const oldAvgDifficultyRef = admin.database().ref('/users/' + currentUser + '/avgDifficulty');
+    const routeDifficultyRef = admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/difficulty');
+    const countRef = admin.database().ref('/users/' + currentUser + '/completedRoutes');
+    return new Promise((resolve, reject) => {
+        oldAvgDifficultyRef.once('value', (oldAvgDifficultySnapshot: any) => {
+            const oldAvgDifficulty: number = oldAvgDifficultySnapshot.val() || 0;
+            routeDifficultyRef.once('value', (routeDifficultySnapshot: any) => {
+                const routeDifficulty: number = routeDifficultySnapshot.val() || 0;
+                if (routeDifficulty) {
+                    countRef.once('value', (countSnapshot: any) => {
+                        const count: number = countSnapshot.val() || 0;
+                        const newAvgDifficulty = revert ? ((oldAvgDifficulty - routeDifficulty) / count) : ((oldAvgDifficulty + routeDifficulty) / count)
+                        // round to 1 decimal place
+                        const newAvgDifficultyRounded = isNaN(newAvgDifficulty) ? 0 : Math.round(newAvgDifficulty * 10) / 10;
+                        admin.database().ref('/users/' + currentUser + '/avgDifficulty').set(newAvgDifficultyRounded).then(() => {
+                            resolve();
+                        }, (error: any) => {
+                            reject(error);
+                        });
+                    }, (error: any) => {
+                        reject(error);
+                    });
+                } else {
+                    reject('Route difficulty not found');
+                }
+            }, (error: any) => {
+                reject(error);
+            });
+        }, (error: any) => {
+            reject(error);
+        });
+    });
+};
