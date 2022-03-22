@@ -6,54 +6,48 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="16dp"
-    android:background="@color/cardview_light_background">
+    android:background="@color/cardview_dark_background">
 
 
     <ImageView
         android:id="@+id/gymslist_logo"
         android:layout_width="75dp"
         android:layout_height="75dp"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
+        android:background="@color/black"
         android:src="@mipmap/ic_launcher"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="238dp"
-        android:layout_height="75dp"
+    <TextView
+        android:id="@+id/gymslist_description"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        app:layout_constraintEnd_toStartOf="@+id/gymslist_favorite"
+        android:layout_marginTop="8dp"
+        android:text="Description goes here"
+        android:textColor="#CDCDCD"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/gymslist_logo"
-        app:layout_constraintTop_toTopOf="@+id/gymslist_logo">
+        app:layout_constraintTop_toBottomOf="@+id/gymslist_gymName" />
 
-        <TextView
-            android:id="@+id/gymslist_description"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Description goes here"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/gymslist_gymName" />
+    <TextView
+        android:id="@+id/gymslist_gymName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="Gym Name"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/gymslist_logo"
+        app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/gymslist_gymName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Gym Name"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <ImageView
+    <ImageButton
         android:id="@+id/gymslist_favorite"
         android:layout_width="48dp"
         android:layout_height="48dp"

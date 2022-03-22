@@ -4,13 +4,15 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.inbloc_app.Gym;
 import com.example.inbloc_app.R;
 import com.example.inbloc_app.retrofit.models.Gyms;
 
@@ -22,23 +24,33 @@ public class GymsAdapter extends RecyclerView.Adapter<GymsAdapter.ViewHolder> {
     private Context context;
     private List<Gyms> showGyms = new ArrayList<>();
     public String passGymID;
+    String namesArr[], locsArr[];
+    int images[];
+    Gym g;
 
     public GymsAdapter() {
         super();
     }
 
-    public GymsAdapter(Context context, List<Gyms> showGyms){
+//    public GymsAdapter(Context context,
+//        this.context = context;
+//        this.showGyms = showGyms;
+//
+//    }
+
+    public GymsAdapter(Context context, String names[], String locs[], int images[]){
 
         this.context = context;
-        this.showGyms = showGyms;
-
+        namesArr = names;
+        locsArr = locs;
+        this.images = images;
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
 
         public TextView gymName;
         public TextView gymDescription;
-        public Button favorite;
+        public ImageButton favorite;
         public ImageView logo;
 
         public ViewHolder(@NonNull View itemView) {
@@ -61,18 +73,37 @@ public class GymsAdapter extends RecyclerView.Adapter<GymsAdapter.ViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
-        Gyms gyms = showGyms.get(position);
-        String gymName = gyms.getName();
-        String description = gyms.getDescription();
+        holder.gymName.setText(namesArr[position]);
+        holder.gymDescription.setText(locsArr[position]);
+        holder.logo.setImageResource(images[position]);
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Navigation.findNavController(view).navigate(R.id.action_myGyms_to_gymFragment);
+            }
+        });
 
-        holder.gymName.setText(gymName);
-        holder.gymDescription.setText(description);
+        holder.favorite.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                holder.favorite.setImageResource(R.drawable.ic_favorite);
+            }
+        });
+
+//        Gyms gyms = showGyms.get(position);
+//        String gymName = gyms.getName();
+//        String description = gyms.getDescription();
+//
+//        holder.gymName.setText(gymName);
+//        holder.gymDescription.setText(description);
 
     }
 
     @Override
     public int getItemCount() {
-        return showGyms.size();
+
+        int len = namesArr.length;
+        return len;
     }
 
     public void setData(List<Gyms> showGyms){
@@ -80,4 +111,7 @@ public class GymsAdapter extends RecyclerView.Adapter<GymsAdapter.ViewHolder> {
         notifyDataSetChanged();
     }
 
+    public Gym getG() {
+        return g;
+    }
 }

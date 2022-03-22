@@ -4,7 +4,7 @@ public class ApiUtils {
 
     private ApiUtils(){}
 
-    public static final String BASE_URL = "http://localhost:1337/";
+    public static final String BASE_URL = "https://flamtkzx.flamtky.dev";
 
     public static ApiService getApiService(){
 

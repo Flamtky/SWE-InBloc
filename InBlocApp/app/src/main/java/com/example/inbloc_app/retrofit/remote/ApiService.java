@@ -3,6 +3,8 @@ package com.example.inbloc_app.retrofit.remote;
 import com.example.inbloc_app.retrofit.models.Gyms;
 import com.example.inbloc_app.retrofit.models.Walls;
 
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -14,7 +16,8 @@ import java.util.List;
 public interface ApiService {
 
     @GET("/gyms")
-    Call<List<Gyms>> getAllGyms(@Header("debug") String deb);
+    Call<ResponseBody> getAllGyms(@Header("Authorization") String deb,
+                              @Header("Content-Type") String type);
 
     @GET("/gyms/")
     Call<Gyms> getSpecificGym();
@@ -24,6 +27,5 @@ public interface ApiService {
 
     @GET("/walls")
     Call<Walls> getSpecificWall();
-
 
 }
