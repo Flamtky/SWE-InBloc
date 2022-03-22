@@ -51,9 +51,10 @@ public class GymFragment extends Fragment {
         walls.add("Wall 6");
         walls.add("Roof");
         
-        Gym gym = null;
-        
-        name.setText(gym.getName());
+        name.setText("Felsmeister");
+        descr.setText("Bad Oeynhausen");
+        logo.setImageResource(R.drawable.logo_felsmeister);
+        gymLayout.setImageResource(R.drawable.felsmeister_layout);
 
         ArrayAdapter arrayAdapter = new ArrayAdapter(getContext(), android.R.layout.simple_list_item_1, walls);
         listView.setAdapter(arrayAdapter);

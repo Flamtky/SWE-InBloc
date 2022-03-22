@@ -10,12 +10,11 @@ public class Gym {
     private int overview;
     private ArrayList<String> walls = new ArrayList<>();
 
-//    public Gym(String name, String loc, int image) {
-//        this.name = name;
-//        this.loc = loc;
-//        this.image = image;
-//    }
-
+    public Gym(String name, String loc, int image) {
+        this.name = name;
+        this.loc = loc;
+        this.image = image;
+    }
 
     public Gym() {
     }
