@@ -2,6 +2,7 @@ package com.example.inbloc_app.Fragments;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,10 +14,28 @@ import androidx.fragment.app.Fragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.inbloc_app.R;
+import com.example.inbloc_app.adapter.GymsAdapter;
+import com.example.inbloc_app.retrofit.models.Gyms;
+import com.example.inbloc_app.retrofit.remote.ApiService;
+import com.example.inbloc_app.retrofit.remote.ApiUtils;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MyGymsFragment extends Fragment{
+
+    private static final String TAG = "";
+    private RecyclerView recyclerView;
+    private GymsAdapter gymsAdapter;
+    private ApiService apiService;
+    private List<Gyms> gymsList;
 
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -56,6 +75,7 @@ public class MyGymsFragment extends Fragment{
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
     }
 
     @Nullable
@@ -63,6 +83,12 @@ public class MyGymsFragment extends Fragment{
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
 //        return inflater.inflate(R.layout.fragment_my_gyms, container, false);
         View view = inflater.inflate(R.layout.fragment_my_gyms, container, false);
+
+        recyclerView = view.findViewById(R.id.recView_myGyms);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getActivity().getBaseContext());
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setAdapter(gymsAdapter);
+
 
         Button goToGymBtn = (Button) view.findViewById(R.id.goToFragment2);
         goToGymBtn.setOnClickListener(new View.OnClickListener() {

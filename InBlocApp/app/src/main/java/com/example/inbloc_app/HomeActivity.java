@@ -6,9 +6,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -17,11 +19,25 @@ import com.example.inbloc_app.Fragments.MyStatsFragment;
 import com.example.inbloc_app.Fragments.ProjectsFragment;
 import com.example.inbloc_app.Fragments.SearchFragment;
 import com.example.inbloc_app.Fragments.SettingsFragment;
+import com.example.inbloc_app.adapter.GymsAdapter;
+import com.example.inbloc_app.retrofit.models.Gyms;
+import com.example.inbloc_app.retrofit.remote.ApiService;
+import com.example.inbloc_app.retrofit.remote.ApiUtils;
 import com.google.android.material.navigation.NavigationView;
+
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
+    private static final String TAG = "";
     private DrawerLayout drawer;
+    public RecyclerView recyclerViewGyms;
+    private ApiService apiService;
+    public List<Gyms> gymsList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +62,10 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
                     new MyGymsFragment()).commit();
             navigationView.setCheckedItem(R.id.nav_my_gyms);
         }
+
+        loadGyms();
+
+
 
     }
 
@@ -90,5 +110,34 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
         } else {
             super.onBackPressed();
         }
+    }
+
+    private void loadGyms(){
+
+        apiService = ApiUtils.getApiService();
+
+        Call<List<Gyms>> call = apiService.getAllGyms("asdjg");
+        call.enqueue(new Callback<List<Gyms>>() {
+            @Override
+            public void onResponse(Call<List<Gyms>> call, Response<List<Gyms>> response) {
+
+                if (!response.isSuccessful()){
+                    Log.i(TAG, "Call unsuccessful");
+                }
+                Log.i(TAG, "Call successful!\n" + response.body());
+                gymsList = response.body();
+
+                GymsAdapter gymsAdapter = new GymsAdapter(getApplicationContext(), gymsList);
+                gymsAdapter.setData(gymsList);
+                recyclerViewGyms.setAdapter(gymsAdapter);
+
+            }
+
+            @Override
+            public void onFailure(Call<List<Gyms>> call, Throwable t) {
+                Log.i(TAG, "No Response from API...");
+            }
+        });
+
     }
 }

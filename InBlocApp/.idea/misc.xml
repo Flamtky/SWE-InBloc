@@ -19,6 +19,7 @@
         <entry key="..\:/Users/DeeDz/InBlocApp/app/src/main/res/layout/nav_header.xml" value="0.358695652173913" />
         <entry key="..\:/Users/DeeDz/InBlocApp/app/src/main/res/menu/drawer_menu.xml" value="0.38697916666666665" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/drawable/ic_inblocvert.xml" value="0.387" />
+        <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/drawable/ic_logout.xml" value="0.387" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/activity_gym.xml" value="0.38697916666666665" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/activity_home.xml" value="0.33" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/activity_login.xml" value="0.33" />
@@ -29,6 +30,7 @@
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/fragment_search.xml" value="0.2015625" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/fragment_settings.xml" value="0.33" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/fragment_stats.xml" value="0.2015625" />
+        <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/list_row_gym.xml" value="0.38697916666666665" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/layout/nav_header.xml" value="0.33" />
         <entry key="..\:/Users/DeeDz/SWE-InBloc/InBlocApp/app/src/main/res/menu/drawer_menu.xml" value="0.38697916666666665" />
       </map>
