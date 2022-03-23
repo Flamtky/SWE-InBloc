@@ -681,8 +681,8 @@ router.get('/:routeId/complete', (req: Request, res: Response, next: NextFunctio
                 if (!(routeExistsBool[0] as boolean)) {
                     return res.status(404).json({ error: 'Route not found' });
                 }
-                hasUserCompletedRoute(gymId, wallId, routeId, currentUser).then((hasCompletedRoute: boolean) => {
-                    res.status(200).json({ data: { hasCompletedRoute: hasCompletedRoute } });
+                hasUserCompletedRoute(gymId, wallId, routeId, currentUser).then((hasCompletedRouteBoolean: boolean) => {
+                    res.status(200).json({ data: { hasCompletedRoute:hasCompletedRouteBoolean } });
                 }, (error: any) => {
                     handleFirebaseError(error, res, next, 'Error getting user rating');
                 });
