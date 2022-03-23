@@ -654,6 +654,49 @@ router.delete('/:routeId/userRatings', (req: Request, res: Response, next: NextF
     next(new APIException(405, 'Method not allowed'));
 });
 
+// Get if user completed this route
+router.get('/:routeId/complete', (req: Request, res: Response, next: NextFunction) => {
+    const gymId = req.query.gymId ? String(req.query.gymId) : null;
+    const wallId = req.query.wallId ? String(req.query.wallId) : null;
+    const routeId = req.params.routeId;
+    const currentUser = req.headers.uid as string;
+
+    if (gymId === null) {
+        return res.status(400).json({ error: 'Invalid gymId' });
+    }
+    if (wallId === null) {
+        return res.status(400).json({ error: 'Invalid wallId' });
+    }
+
+    gymExists(gymId).then((gymExistsBool: boolean) => {
+        if (!gymExistsBool) {
+            return res.status(404).json({ error: 'Gym not found' });
+        }
+        wallExists(gymId, wallId).then((wallExistsBool: boolean) => {
+            if (!wallExistsBool) {
+                return res.status(404).json({ error: 'Wall not found' });
+            }
+            routeExists(gymId, wallId, routeId, true).then((routeExistsBool: any[]) => {
+                const oldRoute = routeExistsBool[1] as Route;
+                if (!(routeExistsBool[0] as boolean)) {
+                    return res.status(404).json({ error: 'Route not found' });
+                }
+                hasUserCompletedRoute(gymId, wallId, routeId, currentUser).then((hasCompletedRoute: boolean) => {
+                    res.status(200).json({ data: { hasCompletedRoute: hasCompletedRoute } });
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error getting user rating');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting route');
+            });
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting wall');
+        });
+    }, (error: any) => {
+        handleFirebaseError(error, res, next, 'Error getting gym');
+    });
+});
+
 // Complete route
 router.post('/:routeId/complete', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.query.gymId ? String(req.query.gymId) : null;
