@@ -34,7 +34,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
             if (snapshot.val() === null) {
                 return res.status(404).json({ error: 'No routes found' });
             } else {
-                res.status(200).json({ data: { walls: snapshot.val() } });
+                res.status(200).json({ data: { routes: snapshot.val() } });
             }
         }, (error: any) => {
             handleFirebaseError(error, res, next, 'Error getting walls');
@@ -161,7 +161,7 @@ router.post('/:routeId', (req: Request, res: Response, next: NextFunction) => {
                                     return res.status(404).json({ error: 'Wall not found' });
                                 } else {
                                     admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId).set(route).then(() => {
-                                        res.status(201).json({ data: { route } });
+                                        res.status(200).json({ data: { route } });
                                     }, (error: any) => {
                                         handleFirebaseError(error, res, next, 'Error creating route');
                                     });
@@ -196,6 +196,9 @@ router.patch('/:routeId/feature', (req: Request, res: Response, next: NextFuncti
         if (isStaffBool || req.headers.admin) {
             if (gymId === null) {
                 return res.status(400).json({ error: 'Invalid gymId' });
+            }
+            if (wallId === null) {
+                return res.status(400).json({ error: 'Invalid wallId' });
             }
             if (newFeatures === null || newFeatures.length === 0 || !validateRouteFeatures(newFeatures)) {
                 return res.status(400).json({ error: 'Invalid features' });
@@ -505,34 +508,57 @@ router.delete('/:routeId/comments/:commentId', (req: Request, res: Response, nex
         if (!isStaffBoolean && !req.headers.admin && currentUser !== commentId) {
             return res.status(403).json({ error: 'Not authorized to delete comment' });
         }
-
         admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).once('value', (snapshot: any) => {
             if (snapshot.val() === null) {
                 return res.status(404).json({ error: 'Comment not found' });
             } else {
-                if (snapshot.val().image) {
-                    admin.storage().bucket().file("Reviews/" + gymId + "/Walls/" + wallId + "/" + routeId + "/" + commentId + ".jpg").delete().then(() => {
-                        admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
-                            res.status(200).json({ data: { commentId } });
+                gymExists(gymId).then((gymExist: boolean) => {
+                    if (!gymExist) {
+                        return res.status(404).json({ error: 'Gym not found' });
+                    } else {
+                        wallExists(gymId, wallId).then((wallExist: boolean) => {
+                            if (!wallExist) {
+                                return res.status(404).json({ error: 'Wall not found' });
+                            } else {
+                                routeExists(gymId, wallId, routeId).then((routeExist: any[]) => {
+                                    if (!routeExist[0]) {
+                                        return res.status(404).json({ error: 'Route not found' });
+                                    } else {
+                                        if (snapshot.val().image) {
+                                            admin.storage().bucket().file("Reviews/" + gymId + "/Walls/" + wallId + "/" + routeId + "/" + commentId + ".jpg").delete().then(() => {
+                                                admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
+                                                    res.status(200).json({ data: { comment: null } });
+                                                }, (error: any) => {
+                                                    handleFirebaseError(error, res, next, 'Error deleting comment');
+                                                });
+                                            }, (error: any) => {
+                                                handleFirebaseError(error, res, next, 'Error deleting image');
+                                            });
+                                        } else {
+                                            admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
+                                                res.status(200).json({ data: { comment: null } });
+                                            }, (error: any) => {
+                                                handleFirebaseError(error, res, next, 'Error deleting comment');
+                                            });
+                                        }
+                                    }
+                                }, (error: any) => {
+                                    handleFirebaseError(error, res, next, 'Error getting route');
+                                });
+                            }
                         }, (error: any) => {
-                            handleFirebaseError(error, res, next, 'Error deleting comment');
+                            handleFirebaseError(error, res, next, 'Error getting wall');
                         });
-                    }, (error: any) => {
-                        handleFirebaseError(error, res, next, 'Error deleting image');
-                    });
-                } else {
-                    admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + commentId).remove().then(() => {
-                        res.status(200).json({ data: { comment: null } });
-                    }, (error: any) => {
-                        handleFirebaseError(error, res, next, 'Error deleting comment');
-                    });
-                }
+                    }
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error getting gym');
+                });
             }
         }, (error: any) => {
             handleFirebaseError(error, res, next, 'Error getting comment');
         });
     }, (error: any) => {
-        handleFirebaseError(error, res, next, 'Error getting gym');
+        handleFirebaseError(error, res, next, 'Error getting staff status');
     });
 }).all('/:routeId/comments', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
@@ -568,15 +594,19 @@ router.post('/:routeId/userRatings', (req: Request, res: Response, next: NextFun
                 if (!(routeExistsBool[0] as boolean)) {
                     return res.status(404).json({ error: 'Route not found' });
                 }
-                admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(userRating).then(() => {
-                    const oldValue = (routeExistsBool[1]?.userRatings || 0) as number;
-                    setUserRating(gymId, wallId, routeId, userRating - oldValue).then(() => {
-                        res.status(200).json({ data: { userRating } });
-                    }).catch((error: any) => {
-                        handleFirebaseError(error, res, next, 'Error updating user rating');
+                admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).once('value', (oldRatingSnapshot: any) => {
+                    admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(userRating).then(() => {
+                        const oldValue = oldRatingSnapshot.val() || 0;
+                        setUserRating(gymId, wallId, routeId, userRating - oldValue).then((result:number) => {
+                            res.status(200).json({ data: { userRating: result } });
+                        }).catch((error: any) => {
+                            handleFirebaseError(error, res, next, 'Error updating user rating');
+                        });
+                    }, (error: any) => {
+                        handleFirebaseError(error, res, next, 'Error saving user rating');
                     });
                 }, (error: any) => {
-                    handleFirebaseError(error, res, next, 'Error saving user rating');
+                    handleFirebaseError(error, res, next, 'Error getting user rating');
                 });
             }, (error: any) => {
                 handleFirebaseError(error, res, next, 'Error getting route');
@@ -608,8 +638,8 @@ router.delete('/:routeId/userRatings', (req: Request, res: Response, next: NextF
             return res.status(404).json({ error: 'User rating not found' });
         } else {
             admin.database().ref('/userRatings/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).remove().then(() => {
-                setUserRating(gymId, wallId, routeId, snapshot.val() || 0).then(() => {
-                    res.status(200).json({ data: { userRating: null } });
+                setUserRating(gymId, wallId, routeId, -snapshot.val() || 0).then((result:number) => {
+                    res.status(200).json({ data: { userRating: result } });
                 }).catch((error: any) => {
                     handleFirebaseError(error, res, next, 'Error updating user rating');
                 });
@@ -760,10 +790,31 @@ router.delete('/:routeId/complete', (req: Request, res: Response, next: NextFunc
 export default router;
 
 const saveComment = (gymId: string, wallId: string, routeId: string, currentUser: string, comment: Comment, res: Response, next: NextFunction) => {
-    admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(comment).then(() => {
-        res.status(200).json({ data: { comment } });
+    gymExists(gymId).then((gymExistsBool: boolean) => {
+        if (!gymExistsBool) {
+            return res.status(404).json({ error: 'Gym not found' });
+        }
+        wallExists(gymId, wallId).then((wallExistsBool: boolean) => {
+            if (!wallExistsBool) {
+                return res.status(404).json({ error: 'Wall not found' });
+            }
+            routeExists(gymId, wallId, routeId).then((routeExistsBool: any[]) => {
+                if (!(routeExistsBool[0] as boolean)) {
+                    return res.status(404).json({ error: 'Route not found' });
+                }
+                admin.database().ref('/comments/' + gymId + '/' + wallId + '/' + routeId + '/' + currentUser).set(comment).then(() => {
+                    res.status(200).json({ data: { comment } });
+                }, (error: any) => {
+                    handleFirebaseError(error, res, next, 'Error saving comment');
+                });
+            }, (error: any) => {
+                handleFirebaseError(error, res, next, 'Error getting route');
+            });
+        }, (error: any) => {
+            handleFirebaseError(error, res, next, 'Error getting wall');
+        });
     }, (error: any) => {
-        handleFirebaseError(error, res, next, 'Error saving comment');
+        handleFirebaseError(error, res, next, 'Error getting gym');
     });
 };
 
@@ -809,21 +860,21 @@ const routeExists = (gymId: string, wallId: string, routeId: string, getRoute: b
     });
 };
 
-const setUserRating = (gymId: string, wallId: string, routeId: string, amount: number): Promise<void> => {
+const setUserRating = (gymId: string, wallId: string, routeId: string, amount: number): Promise<number> => {
+    let amountResult = amount;
     return new Promise((resolve, reject) => {
         admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/userRatings').transaction((currentValue: number) => {
-            if (currentValue === null) {
-                return amount;
-            } else {
-                return currentValue + amount;
+            if (currentValue !== null) {
+                amountResult = currentValue + amount;
             }
+            return amountResult
         }, (error: any, committed: boolean, snapshot: any) => {
             if (error) {
                 reject(error);
             } else if (!committed) {
                 reject('Rating not committed');
             } else {
-                resolve();
+                resolve(amountResult);
             }
         });
     });
