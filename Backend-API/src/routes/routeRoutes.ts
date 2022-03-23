@@ -691,7 +691,7 @@ router.post('/:routeId/complete', (req: Request, res: Response, next: NextFuncti
                             incrementUserCompletedRouteCount(currentUser).then(() => {
                                 incrementRoutesCompletedCount(gymId, wallId, routeId).then(() => {
                                     // Update user completed features
-                                    updateUsersCompletedFeatures(gymId, wallId, routeId, currentUser).then(() => {
+                                    updateUsersCompletedFeatures(gymId, wallId, routeId, currentUser, flashed, false).then(() => {
                                         res.status(200).json({ data: { userCompletedRoute: true } });
                                     }).catch((error: any) => {
                                         handleFirebaseError(error, res, next, 'Error updating user completed features');
@@ -756,7 +756,7 @@ router.delete('/:routeId/complete', (req: Request, res: Response, next: NextFunc
                             decrementUserCompletedRouteCount(currentUser).then(() => {
                                 decrementRoutesCompletedCount(gymId, wallId, routeId).then(() => {
                                     // Update user completed features
-                                    updateUsersCompletedFeatures(gymId, wallId, routeId, currentUser, true).then(() => {
+                                    updateUsersCompletedFeatures(gymId, wallId, routeId, currentUser, false, true).then(() => {
                                         res.status(200).json({ data: { userCompletedRoute: false } });
                                     }).catch((error: any) => {
                                         handleFirebaseError(error, res, next, 'Error updating user completed features');
@@ -944,7 +944,7 @@ const incrementRoutesCompletedCount = (gymId: string, wallId: string, routeId: s
     });
 };
 
-const updateUsersCompletedFeatures = (gymId: string, wallId: string, routeId: string, currentUser: string, revert: boolean = false): Promise<void> => {
+const updateUsersCompletedFeatures = (gymId: string, wallId: string, routeId: string, currentUser: string, flashed:boolean, revert: boolean = false): Promise<void> => {
     const oldCompletedFeaturesRef = admin.database().ref('/users/' + currentUser + '/completedFeatures');
     const wallFeaturesRef = admin.database().ref('/walls/' + gymId + '/' + wallId + '/features');
     const routeFeaturesRef = admin.database().ref('/routes/' + gymId + '/' + wallId + '/' + routeId + '/features');
@@ -958,9 +958,25 @@ const updateUsersCompletedFeatures = (gymId: string, wallId: string, routeId: st
                     if (wallFeatures && routeFeatures) {
                         const newFeatures: any = buildNewUserFeatures(oldFeatures, wallFeatures, routeFeatures, revert);
                         setNewUserAvgDifficulty(gymId, wallId, routeId, currentUser, revert).then(() => {
-
                             admin.database().ref('/users/' + currentUser + '/completedFeatures').set(newFeatures).then(() => {
-                                resolve();
+                                admin.database().ref('/users/' + currentUser + '/flashes').transaction((currentValue: number) => {
+                                    if (!flashed) {
+                                        return currentValue || 0;
+                                    }
+                                    if (currentValue === null) {
+                                        return 1;
+                                    } else {
+                                        return currentValue + 1;
+                                    }
+                                }, (error: any, committed: boolean, snapshot: any) => {
+                                    if (error) {
+                                        reject(error);
+                                    } else if (!committed) {
+                                        reject('Flashed count not committed');
+                                    } else {
+                                        resolve();
+                                    }
+                                });
                             }, (error: any) => {
                                 reject(error);
                             });
