@@ -1,9 +1,11 @@
 <script>
 	import {goto, prefetch} from '$app/navigation';
+	import { page } from '$app/stores';
 	export let gym;
 	export let gymId;
     export let name;
     export let wall_name;
+	let route_counter=0;
     let adresse;
 	if(gym){
 		adresse = gym.street + ' ' + gym.houseNumber + ' ' + gym.zip + ' ' + gym.city;
@@ -33,20 +35,28 @@
 		style="background: rgba(0,0,0,0);margin-top: 15px;width: 350px;border-radius: 10px;border: 2px solid rgba(0,0,0,0.25);"
 	>
 		<div style="max-width: 350px;min-width: 250px;">
-			<h1 class="text-center" style="width: 300px;">Routen</h1>
+			<h1 class="text-center" style="width: 300px;">Routes</h1>
 			<ul class="list-group" style="max-width: 350px;">
+				{#if routes}
+				{#each routes as route}
+				{#if route}
+				<li
+					class="list-group-item"
+					style="cursor: pointer; border-width: 3px;border-style: solid;border-radius: 10px;border-bottom-right-radius: 10px;border-bottom-left-radius: 10px;margin-bottom: 3px;margin-right: 5px;margin-left: 5px;"
+					on:click={()=>{goto(`${$page.url.pathname}/${route[0]}`)}}
+					>
+				{route[0]} <span class="text-muted" >Difficulty: {route[1].difficulty} </span><small class="text-muted">Features: {route[1].features}</small>
+				</li>
+				{/if}
+				{/each}
+				{:else}
 				<li
 					class="list-group-item"
 					style="border-width: 3px;border-style: solid;border-radius: 10px;border-bottom-right-radius: 10px;border-bottom-left-radius: 10px;margin-bottom: 3px;margin-right: 5px;margin-left: 5px;"
 				>
-					<span>List Group Item 1</span>
+					<span>There are no Routes on this Wall</span>
 				</li>
-				<li
-					class="list-group-item"
-					style="border-width: 3px;border-style: solid;border-radius: 10px;border-bottom-right-radius: 10px;border-bottom-left-radius: 10px;margin-bottom: 3px;margin-left: 5px;margin-right: 5px;"
-				>
-					<span>List Group Item 2</span>
-				</li>
+				{/if}
 			</ul>
 		</div>
 	</div>

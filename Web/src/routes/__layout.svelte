@@ -132,7 +132,7 @@
 						href="/signup">Sign Up</a
 					>
 				{:else if browser}
-					<a class="btn btn-light action-button" role="button" href="#">{JSON.parse($local_user_data).username}</a
+					<a class="btn btn-light action-button" role="button" sveltekit:prefetch href="/user">{JSON.parse($local_user_data).username}</a
 					><span class="navbar-text"
 						><button class="btn btn-light action-button" on:click={logout}>Logout</button></span
 					>

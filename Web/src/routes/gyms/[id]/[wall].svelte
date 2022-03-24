@@ -4,11 +4,12 @@
 	export async function load({ params }) {
         let {id, wall} = params;
         let gym = null;
+		let routes = null;
 		if (getAuth().currentUser) {
 			console.log('ICH LADE');
 			let uid = getAuth().currentUser.uid;
 			let token = await getAuth().currentUser.getIdToken(true);
-			let res = await fetch(`http://localhost:1337/gyms/${id}`, {
+			let res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -20,9 +21,9 @@
 				console.log(json);
 				gym = json.data.gym;
                 console.log('ICH HABE GYM DATEN');
-
+			
                 
-				/* res = await fetch(`http://localhost:1337/walls?gymId=${id}`, {
+				res = await fetch(`https://flamtkzx.flamtky.dev/routes?gymId=${id}&wallId=${wall}`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -31,23 +32,27 @@
 				});
 				if (res.ok) {
 					json = await res.json();
-					walls = Object.entries(json.data.walls);
-					console.log(walls);
+					routes = Object.entries(json.data.routes);
+					console.log('ICH HABE ROUTES DATEN');
+					console.log(routes);
 				} else {
-					console.log('No Walls found');
-					walls = [];
+					console.log('No routes found');
+					routes = null;
 				}
-				console.log('ICH HABE FERTIG'); */
+			}
+				console.log('ICH HABE FERTIG');
 				return {
 					props: {
-						gym
+						gym,
+						routes
 					}
 				};
-			}
+			
 		}
 		return {
 			props: {
-				gym
+				gym,
+				routes
 			}
 		};
 	}
@@ -60,12 +65,11 @@
 
     export let gym;
     export let routes;
-    //TODO: get route from the wall
 
     async function reload(){
         let uid = getAuth().currentUser.uid;
 			let token = await getAuth().currentUser.getIdToken(true);
-			let res = await fetch(`http://localhost:1337/gyms/${id}`, {
+			let res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -76,9 +80,9 @@
 				let json = await res.json();
 				console.log(json);
 				gym = json.data.gym;
-
+			
                 
-				/* res = await fetch(`http://localhost:1337/walls?gymId=${id}`, {
+				res = await fetch(`https://flamtkzx.flamtky.dev/routes?gymId=${id}&wallId=${wall}`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -87,14 +91,14 @@
 				});
 				if (res.ok) {
 					json = await res.json();
-					walls = Object.entries(json.data.walls);
-					console.log(walls);
+					routes = Object.entries(json.data.routes);
+					console.log(routes);
 				} else {
-					console.log('No Walls found');
-					walls = [];
+					console.log('No routes found');
+					routes = null;
 				}
-				console.log('ICH HABE FERTIG'); */
 			}
+			
 		}
 
     onAuthStateChanged(getAuth(), async (user) => {
@@ -108,6 +112,7 @@
 	});
 </script>
 
-{#if gym}
-<Wall name={gym.name} gym={gym} gymId={id} wall_name={wall}/>
+{#if gym != null}
+<Wall name={gym.name} gym={gym} gymId={id} wall_name={wall} routes={routes}/>
 {/if}
+

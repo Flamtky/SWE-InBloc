@@ -11,7 +11,7 @@
 			let token = await getAuth().currentUser.getIdToken(true);
 			let gyms = null;
 			let image_urls = {};
-			let res = await fetch('http://localhost:1337/gyms', {
+			let res = await fetch('https://flamtkzx.flamtky.dev/gyms', {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -21,10 +21,11 @@
 
 			if (res.ok) {
 				let json = await res.json();
+				console.log(json);
 				let data = json.data;
 				gyms = Object.entries(data.gyms);
 				for (const gym of gyms){
-					let res = await fetch(`http://localhost:1337/gyms/${gym[0]}/logo`, {
+					let res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${gym[0]}/logo`, {
 						method: 'GET',
 						headers: {
 							'Content-Type': 'application/json',
@@ -70,12 +71,13 @@
 	export let gyms;
 	export let image_urls = {};
 	let errorMessage = '';
+	let old_gyms = null;
 
 	async function reload(){
 		console.log('ICH RELOADE');
 			let uid = getAuth().currentUser.uid;
 			let token = await getAuth().currentUser.getIdToken(true);
-			let res = await fetch('http://localhost:1337/gyms', {
+			let res = await fetch('https://flamtkzx.flamtky.dev/gyms', {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -96,7 +98,7 @@
 				}
 				console.log(gyms);
 				for (const gym of gyms){
-					let res = await fetch(`http://localhost:1337/gyms/${gym[0]}/logo`, {
+					let res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${gym[0]}/logo`, {
 						method: 'GET',
 						headers: {
 							'Content-Type': 'application/json',
@@ -113,6 +115,28 @@
 					}
 				}
 			}
+	}
+
+	let search_string = null;
+
+	function search_gym(){
+		console.log('search_gym');
+		if(old_gyms == null){
+			old_gyms = gyms;
+		}
+		if (search_string == null || search_string == ''){
+			gyms = old_gyms;
+		} else {
+			gyms = old_gyms;
+			let filtered_gyms = [];
+			for (const gym of gyms){
+				if (gym[1].name.toLowerCase().includes(search_string.toLowerCase())){
+					filtered_gyms.push(gym);
+				}
+			}
+			old_gyms = gyms;
+			gyms = filtered_gyms;
+		}
 	}
 
 	onAuthStateChanged(getAuth(), async (user) => {
@@ -142,6 +166,8 @@
 				name="search"
 				style="filter: blur(0px); margin-left: 0.5vw; margin-right: 0.5vw;"
 				placeholder="Search"
+				bind:value={search_string}
+				on:input={search_gym}
 			/><i class="fa fa-search" />
 		</div>
 	</form>

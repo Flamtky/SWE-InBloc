@@ -17,7 +17,7 @@
 			console.log('ICH LADE');
 			let uid = getAuth().currentUser.uid;
 			let token = await getAuth().currentUser.getIdToken(true);
-			let res = await fetch(`http://localhost:1337/gyms/${id}`, {
+			let res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}`, {
 				method: 'GET',
 				headers: {
 					'Content-Type': 'application/json',
@@ -30,7 +30,7 @@
 				gym = json.data.gym;
 				console.log('ICH HABE GYM DATEN');
 
-				res = await fetch(`http://localhost:1337/gyms/${id}/logo`, {
+				res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}/logo`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -47,7 +47,7 @@
 				}
 				console.log('ICH HABE IMAGE URL');
 
-				res = await fetch(`http://localhost:1337/gyms/${id}/openings`, {
+				res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}/openings`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -64,7 +64,7 @@
 				}
 				console.log('ICH HABE OPENING HOURS');
 
-				res = await fetch(`http://localhost:1337/walls?gymId=${id}`, {
+				res = await fetch(`https://flamtkzx.flamtky.dev/walls?gymId=${id}`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -80,7 +80,7 @@
 					walls = [];
 				}
 
-				res = await fetch(`http://localhost:1337/gyms/${id}/holidays`, {
+				res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}/holidays`, {
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
@@ -130,7 +130,7 @@
 		const { id } = $page.params;
 		let uid = getAuth().currentUser.uid;
 		let token = await getAuth().currentUser.getIdToken(true);
-		let res = await fetch(`http://localhost:1337/gyms/${id}`, {
+		let res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -141,7 +141,7 @@
 		console.log(json.data.gym);
 		gym = json.data.gym;
 
-		res = await fetch(`http://localhost:1337/gyms/${id}/logo`, {
+		res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}/logo`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -157,7 +157,7 @@
 				'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.antenneniederrhein.de%2Fexternalimages%2F%3Fsource%3Djpg248%2Fboulderhalle-kleve.jpg%26crop%3D0x125x6000x3750%26resize%3D1280x800%26dt%3D202007130845510&f=1&nofb=1';
 		}
 
-		res = await fetch(`http://localhost:1337/gyms/${id}/openings`, {
+		res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}/openings`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -172,7 +172,7 @@
 			opening_hours = null;
 		}
 
-		res = await fetch(`http://localhost:1337/walls?gymId=${id}`, {
+		res = await fetch(`https://flamtkzx.flamtky.dev/walls?gymId=${id}`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',
@@ -187,7 +187,7 @@
 			walls = [];
 		}
 
-		res = await fetch(`http://localhost:1337/gyms/${id}/holidays`, {
+		res = await fetch(`https://flamtkzx.flamtky.dev/gyms/${id}/holidays`, {
 			method: 'GET',
 			headers: {
 				'Content-Type': 'application/json',

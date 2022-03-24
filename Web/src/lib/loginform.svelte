@@ -39,7 +39,7 @@
 					.then((idToken) => {
 						// Send token to your backend via HTTPS
 						// ...
-						fetch(`http://localhost:1337/users/${cred.user.uid}`, {
+						fetch(`https://flamtkzx.flamtky.dev/users/${cred.user.uid}`, {
 							method: 'GET',
 							headers: {
 								'Content-Type': 'application/json',

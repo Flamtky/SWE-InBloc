@@ -32,7 +32,7 @@
 	async function a(){ //TODO remove
 		//var token = await getAuth().currentUser.getIdToken(true);
 		var uid = await getAuth().currentUser.uid;
-		const source = new EventSource("http://localhost:1337/users/" + uid + "/stream",);
+		const source = new EventSource("https://flamtkzx.flamtky.dev/users/" + uid + "/stream",);
 		source.addEventListener('message', function(e) {
 			console.log(e.data);
 		});

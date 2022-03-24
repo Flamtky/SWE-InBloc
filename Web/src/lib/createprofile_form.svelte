@@ -32,7 +32,7 @@
 		if(zipcode != null){
 			registerBody.zip = zipcode.toString();
 		}
-		let res = await fetch(`http://localhost:1337/users/${user.uid}`, {
+		let res = await fetch(`https://flamtkzx.flamtky.dev/users/${user.uid}`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',

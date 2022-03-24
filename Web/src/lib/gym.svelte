@@ -12,7 +12,6 @@
         export let opening_hours;
         export let override_opening_hours;
         export let Walls;
-        console.log(opening_hours)
     </script>
     
     <div class="container border rounded-0" style="margin-top: 10px;/*margin-left: 100px;*/padding-bottom: 10px;">
