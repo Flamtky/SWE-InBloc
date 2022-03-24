@@ -48,6 +48,7 @@ app.use((req, res, next) => {
     // if request from localhost and header Debug is set, skip authentication
     if (req.headers.host === 'localhost:1337' && req.headers.debug) {
         req.headers.admin = "true";
+        req.headers.uid = "123";
         return next();
     }
 

@@ -536,7 +536,7 @@ function updateOpeningFromDayByGymId(gymId: string, next: NextFunction, day: str
                     ...oldData,
                     [day]: openingDay
                 }
-                res.status(200).json({ data: { [day]: openingDay } });
+                res.status(200).json({ data: { [day]: newData } });
             }).catch((err) => {
                 handleFirebaseError(err, res, next, 'Error updating opening');
             });
