@@ -1,9 +1,0 @@
-<resources>
-    <string name="app_name" translatable="false">InBloc</string>
-    <string name="login_new_here">New here?</string>
-    <string name="login_sign_up">Sign up!</string>
-    <string name="login_sign_in">Sign in!</string>
-    <string name="email" translatable="false">E-Mail</string>
-    <string name="password">Password</string>
-    <string name="main_settings">Settings</string>
-</resources>
