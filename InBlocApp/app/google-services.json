@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "406472662977",
+    "firebase_url": "https://inbloc69-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "inbloc69",
+    "storage_bucket": "inbloc69.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406472662977:android:c6f1eb9ac79382f27f1940",
+        "android_client_info": {
+          "package_name": "com.example.inbloc_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "406472662977-junfbug7agl1vl2u422bqh3uukstn70e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVO4X6aJdNV1jZhT1q2M0y0JgvWciCOO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "406472662977-junfbug7agl1vl2u422bqh3uukstn70e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/navgraph"
+    app:startDestination="@id/myGyms">
+
+    <fragment
+        android:id="@+id/myGyms"
+        android:name="com.example.inbloc_app.Fragments.MyGymsFragment"
+        android:label="MyGyms" >
+        <action
+            android:id="@+id/action_myGyms_to_gymFragment"
+            app:destination="@id/gymFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/myStats"
+        android:name="com.example.inbloc_app.Fragments.MyStatsFragment"
+        android:label="MyStats" />
+    <fragment
+        android:id="@+id/projects"
+        android:name="com.example.inbloc_app.Fragments.ProjectsFragment"
+        android:label="Projects" />
+    <fragment
+        android:id="@+id/search"
+        android:name="com.example.inbloc_app.Fragments.SearchFragment"
+        android:label="Search" />
+    <fragment
+        android:id="@+id/settings"
+        android:name="com.example.inbloc_app.Fragments.SettingsFragment"
+        android:label="Settings" />
+    <fragment
+        android:id="@+id/gymFragment"
+        android:name="com.example.inbloc_app.Fragments.GymFragment"
+        android:label="fragment_gym"
+        tools:layout="@layout/fragment_gym" />
+</navigation>

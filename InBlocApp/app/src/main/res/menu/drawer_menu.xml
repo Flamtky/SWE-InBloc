@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item android:id="@+id/nav_my_gyms"
+            android:icon="@drawable/ic_my_gym"
+            android:title="My Gyms" />
+        <item android:id="@+id/nav_find_gyms"
+            android:icon="@drawable/ic_search"
+            android:title="Find Gyms" />
+        <item android:id="@+id/nav_projects"
+            android:icon="@drawable/ic_projects"
+            android:title="My Projects" />
+        <item android:id="@+id/nav_stats"
+            android:icon="@drawable/ic_stats"
+            android:title="My Stats" />
+        <item android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_settings"
+            android:title="Settings" />
+    </group>
+
+    <item android:title="">
+        <menu>
+            <item android:id="@+id/nav_logout"
+                android:icon="@drawable/ic_logout"
+                android:title="Log Out" />
+        </menu>
+    </item>
+
+</menu>
