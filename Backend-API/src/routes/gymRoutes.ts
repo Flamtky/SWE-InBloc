@@ -78,7 +78,6 @@ router.post('/:gymid', (req: Request, res: Response, next: NextFunction) => {
 });
 
 // Delete gym by gymId
-// TODO: delete every opening, holidays, logo associated with gym
 router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
     const currentUser = req.headers.uid;
@@ -92,7 +91,7 @@ router.delete('/:gymId', (req: Request, res: Response, next: NextFunction) => {
 
 // Logo routes
 
-// Get gym logo // TODO: change logo url to Gyms/:gymId/logo.jpg
+// Get gym logo
 router.get('/:gymId/logo', (req: Request, res: Response, next: NextFunction) => {
     const gymId = req.params.gymId;
     getFileLink(gymId, next, res);
@@ -137,8 +136,6 @@ router.delete('/:gymId/logo', (req: Request, res: Response, next: NextFunction) 
 }).all('/:gymId/logo', (_req: Request, _res: Response, next: NextFunction) => {
     next(new APIException(405, 'Method not allowed'));
 });
-
-//TODO: delete logo route
 
 // Openings routes
 

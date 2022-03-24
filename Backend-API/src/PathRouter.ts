@@ -13,5 +13,5 @@ export default function (app: Express):void {
     app.use('/walls', WallRoutes)
     app.use('/routes', RouteRoutes);
 
-    app.use('/streams', StreamRoutes); // TODO: Implement stream routes or delete this line
+    //app.use('/streams', StreamRoutes);
 }
