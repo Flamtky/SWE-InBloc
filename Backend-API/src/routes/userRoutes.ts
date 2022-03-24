@@ -21,7 +21,7 @@ router.use((req, res, next) => {
 // Get all users
 router.get('/', (req: Request, res: Response, next: NextFunction) => {
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
-    if (isNaN(limit)) {
+    if (isNaN(limit) || limit < 1 || limit > 1000) {
         return res.status(400).json({ error: 'Invalid limit' });
     }
 
@@ -102,17 +102,22 @@ router.post('/:uid', (req: Request, res: Response, next: NextFunction) => {
 router.delete('/:uid', (req: Request, res: Response, next: NextFunction) => {
     const id = req.params.uid;
     const currentUser = req.headers.uid;
+    const keepAuth = req.query.keepAuth === 'true';
     if (!req.headers.admin) {
         if (id !== currentUser) {
             return next(new APIException(403, 'You are not allowed to delete this user'));
         }
     }
     admin.database().ref('/users/' + id).remove().then(() => {
-        admin.auth().deleteUser(id).then(() => {
+        if (!keepAuth) {
+            admin.auth().deleteUser(id).then(() => {
+                res.status(200).json({ data: { user: null } });
+            }).catch((err) => {
+                handleFirebaseError(err, res, next, 'Error deleting user auth');
+            });
+        } else {
             res.status(200).json({ data: { user: null } });
-        }).catch((err) => {
-            handleFirebaseError(err, res, next, 'Error deleting user auth');
-        });
+        }
     }).catch((err) => {
         handleFirebaseError(err, res, next, 'Error deleting user');
     });

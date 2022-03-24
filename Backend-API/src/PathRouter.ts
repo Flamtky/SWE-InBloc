@@ -2,9 +2,8 @@ import { Router, Express} from 'express';
 import UserRoutes from './routes/userRoutes';
 import StreamRoutes from './routes/streamRoutes';
 import GymRoutes from './routes/gymRoutes';
-import WallRoutes from './routes/WallRoutes';
-/*
-import RouteRoutes from './routes/route';*/
+import WallRoutes from './routes/wallRoutes';
+import RouteRoutes from './routes/routeRoutes';
 // ...
 
 
@@ -12,10 +11,7 @@ export default function (app: Express):void {
     app.use('/users', UserRoutes);
     app.use('/gyms', GymRoutes);
     app.use('/walls', WallRoutes)
-    /*
-    app.use('/wall', WallRoutes.init);
-    app.use('/route', RouteRoutes.init);
-    */
+    app.use('/routes', RouteRoutes);
 
-    app.use('/streams', StreamRoutes);
+    app.use('/streams', StreamRoutes); // TODO: Implement stream routes or delete this line
 }
