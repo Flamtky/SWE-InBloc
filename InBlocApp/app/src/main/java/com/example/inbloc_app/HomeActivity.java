@@ -68,8 +68,6 @@ public class HomeActivity extends AppCompatActivity implements NavigationView.On
             navigationView.setCheckedItem(R.id.nav_my_gyms);
         }
 
-
-
     }
 
     @Override

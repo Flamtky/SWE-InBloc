@@ -42,11 +42,11 @@
             android:id="@+id/loginbuttonMain"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
             android:text="Sign In"
+            android:visibility="invisible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/forgotPasswordLogin" />
+            app:layout_constraintTop_toBottomOf="@+id/skipButton" />
 
         <TextView
             android:id="@+id/signUpTextMain"
@@ -89,11 +89,12 @@
             app:layout_constraintTop_toBottomOf="@+id/passwordMain" />
 
         <ProgressBar
-            android:id="@+id/progressBar_register"
+            android:id="@+id/progressBar_login"
             style="?android:attr/progressBarStyleLarge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
+            android:visibility="invisible"
             app:layout_constraintBottom_toBottomOf="@+id/passwordMain"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.498"
@@ -104,10 +105,11 @@
             android:id="@+id/skipButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="go to main"
+            android:layout_marginTop="8dp"
+            android:text="Login"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.527"
-            app:layout_constraintStart_toEndOf="@+id/loginbuttonMain"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/forgotPasswordLogin" />
 
         <ImageView
