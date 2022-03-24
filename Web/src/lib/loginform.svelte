@@ -18,9 +18,14 @@
 		errorMessage = '';
 		signInWithEmailAndPassword(getAuth(), email, password)
 			.then(async (cred) => {
+				console.log("Signed in")
 				if (getAuth().currentUser.emailVerified == false) {
 					errorMessage = 'Your account is not verified. Please check your email and try again.';
-					await sendEmailVerification(getAuth().currentUser);
+					console.log("Verified False")
+					await sendEmailVerification(getAuth().currentUser).catch(function (error) {
+						console.log(error);
+					});
+					console.log("Email sent")
 					signOut(getAuth())
 						.then(function () {
 							$loggedin_user = null;
@@ -32,10 +37,12 @@
 							console.log(error);
 							alert('logout failed');
 						});
+						console.log("Logged out")
 					return;
 				}
+				console.log("Verified True")
 				getAuth()
-					.currentUser.getIdToken(/* forceRefresh */ true)
+					.currentUser.getIdToken(true)
 					.then((idToken) => {
 						// Send token to your backend via HTTPS
 						// ...

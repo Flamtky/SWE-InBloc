@@ -94,7 +94,6 @@
 			<div class="collapse navbar-collapse" id="navcol-1">
 				<ul class="navbar-nav">
 					{#if $loggedin_user === null || $local_user_data === null}
-					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">Users</a></li>
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/">Find Gyms</a></li>
 					{:else if browser}
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">Users</a></li>
@@ -103,20 +102,6 @@
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">My Gyms</a></li>
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">My Stats</a></li>
 					<li class="nav-item"><a class="nav-link" sveltekit:prefetch href="/admin/users">Settings</a></li>
-					<li class="nav-item dropdown">
-						<a
-							class="dropdown-toggle nav-link"
-							aria-expanded="false"
-							data-bs-toggle="dropdown"
-							href="#"
-							>Dropdown
-						</a>
-						<div class="dropdown-menu">
-							<a class="dropdown-item" href="#">First Item</a><a class="dropdown-item" href="#"
-								>Second Item</a
-							><a class="dropdown-item" href="#">Third Item</a>
-						</div>
-					</li>
 					{/if}
 				</ul>
 				
@@ -142,45 +127,32 @@
 	</nav>
 </header>
 
-<slot />
+<slot/>
 
 <footer class="footer-dark">
 	<div class="container">
 		<div class="row">
 			<div class="col-sm-6 col-md-3 item">
-				<h3>Services</h3>
-				<ul>
-					<li><a href="#">Web design</a></li>
-					<li><a href="#">Development</a></li>
-					<li><a href="#">Hosting</a></li>
-				</ul>
+				
 			</div>
 			<div class="col-sm-6 col-md-3 item">
 				<h3>About</h3>
 				<ul>
-					<li><a href="#">Company</a></li>
+					<li><a href="#">Contact</a></li>
 					<li><a href="#">Team</a></li>
-					<li><a href="#">Careers</a></li>
+					<li><a href="#">Impressum</a></li>
 				</ul>
 			</div>
 			<div class="col-md-6 item text">
-				<h3>Company Name</h3>
+				<h3>In Bloc</h3>
 				<p>
-					Praesent sed lobortis mi. Suspendisse vel placerat ligula. Vivamus ac sem lacus. Ut
-					vehicula rhoncus elementum. Etiam quis tristique lectus. Aliquam in arcu eget velit
-					pulvinar dictum vel in justo.
+					In Bloc is a platform for people to find and join gyms in their area.
 				</p>
 			</div>
-			<div class="col item social">
-				<a href="#"><i class="icon ion-social-facebook" /></a><a href="#"
-					><i class="icon ion-social-twitter" /></a
-				><a href="#"><i class="icon ion-social-snapchat" /></a><a href="#"
-					><i class="icon ion-social-instagram" /></a
-				>
-			</div>
 		</div>
-		<p class="copyright">Company Name © 2022</p>
+		<p class="copyright">In Bloc © 2022</p>
 	</div>
 	<script
 		src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </footer>
+

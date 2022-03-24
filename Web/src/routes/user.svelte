@@ -49,11 +49,12 @@
 {#if local_data && local_data[0][1].avgDifficulty}
 <h3>The average difficulty of your Completed Routes: {local_data[0][1].avgDifficulty}</h3>
 <h3>You completed {local_data[0][1].completedRoutes} routes</h3>
-<h3>You flashed {local_data[0][1].completedRoutes} of your completed routes</h3>
+<h3>You flashed {local_data[0][1].flashes} of your completed routes</h3>
 <h3>You completed routes with the following features</h3>
 {#each completedFeatures as [feature, value]}
-<h5>{feature}</h5>
+<h5>{feature.replace(/^\w/, (c) => c.toUpperCase())} {value} times</h5>
 {/each}
 {:else}
 <h3>You have not completed any routes yet</h3>
 {/if}
+

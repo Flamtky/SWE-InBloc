@@ -45,7 +45,7 @@
 					style="cursor: pointer; border-width: 3px;border-style: solid;border-radius: 10px;border-bottom-right-radius: 10px;border-bottom-left-radius: 10px;margin-bottom: 3px;margin-right: 5px;margin-left: 5px;"
 					on:click={()=>{goto(`${$page.url.pathname}/${route[0]}`)}}
 					>
-				{route[0]} <span class="text-muted" >Difficulty: {route[1].difficulty} </span><small class="text-muted">Features: {route[1].features}</small>
+				{route[0]} <span class="text-muted" >Difficulty: {route[1].difficulty} </span><small class="text-muted">Features: {route[1].features.replace(/^\w/, (c) => c.toUpperCase())}</small>
 				</li>
 				{/if}
 				{/each}
