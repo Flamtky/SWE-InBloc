@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+body {
+  background: #67b5ff;
+  margin: 0;
+}
+h1,h2,h3,h4,a,p,li {
+  color: #ffffff;
+  font-family: 'VT323', monospace;
+  font-weight: normal;
+}
